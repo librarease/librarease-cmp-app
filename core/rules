@@ -1,0 +1,77 @@
+1. Architecture & Project Structure
+
+Follow Clean Architecture or MVVM.
+
+Separate layers clearly: domain, data, presentation, core.
+
+Use feature modules for independent features; avoid tight coupling.
+
+Keep core utilities (network, logging, DI, shared components) in a shared module.
+
+Use Dependency Injection (Hilt/Dagger/Koin) to decouple dependencies.
+
+2. UI / UX
+
+Follow Material Design or platform design guidelines.
+
+Keep UI modular: components, widgets, and reusable layouts in a ui module.
+
+Use data binding / view binding to reduce boilerplate.
+
+Prefer compose or modern declarative UI for flexibility (if applicable).
+
+Ensure responsive layouts: support multiple screen sizes and orientations.
+
+3. Networking
+
+Centralize networking logic in a network/data module.
+
+Use Retrofit + OkHttp or equivalent.
+
+Handle errors gracefully: timeouts, offline mode, retries.
+
+Prefer asynchronous calls: Kotlin Coroutines, Flow, or RxJava.
+
+Use HTTPS and secure API communication.
+
+4. Storage & Data Management
+
+Use local DB (Room / SQLDelight) for structured data.
+
+Use DataStore / SharedPreferences for small key-value storage.
+
+Implement caching strategies for offline-first behavior.
+
+Separate entity models (DB) from domain models to avoid leaks.
+
+5. Dependency & Version Management
+
+Maintain a single source of truth for dependencies (e.g., buildSrc or Versions.kt).
+
+Keep Gradle configuration modular and reusable.
+
+Use semantic versioning for modules.
+
+Avoid hardcoding versions in multiple places.
+
+8. Security & Best Practices
+
+Avoid storing sensitive info in plaintext.
+
+Use encrypted storage for secrets or tokens.
+
+Secure network communication (HTTPS, certificate pinning if needed).
+
+Limit exposure of internal modules; keep only necessary APIs public.
+
+9. Performance
+
+Optimize module dependencies to avoid unnecessary builds.
+
+Lazy load features when possible.
+
+Use background threads for heavy work (network, DB, computations).
+
+Avoid memory leaks: lifecycle-aware components, proper cleanup.
+
+Do not hardcode as possible for values. And add core code which would be used in most part of project in core module
