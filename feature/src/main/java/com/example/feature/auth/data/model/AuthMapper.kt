@@ -2,7 +2,7 @@ package com.example.feature.auth.data.model
 
 import com.example.feature.auth.domain.model.User
 
-fun AuthResponse.toDomain(): User {
+fun AuthResponse.toUserDomain(): User {
     return User(
         id = id,
         name = name,

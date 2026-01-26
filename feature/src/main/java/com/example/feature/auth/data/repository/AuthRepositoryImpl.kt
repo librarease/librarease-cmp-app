@@ -8,7 +8,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.example.feature.auth.data.model.SignInRequest
 import com.example.feature.auth.data.model.SignUpRequest
-import com.example.feature.auth.data.model.toDomain
+import com.example.feature.auth.data.model.toUserDomain
 import com.example.feature.auth.data.remote.AuthApiService
 import com.example.feature.auth.domain.model.AuthErrorCode
 import com.example.feature.auth.domain.model.AuthResult
@@ -46,7 +46,7 @@ class AuthRepositoryImpl(
 
             val request = SignUpRequest(email = email, password = password, name = name)
             val response = authApiService.signUp(request)
-            val user = response.toDomain()
+            val user = response.toUserDomain()
             
             saveUser(user)
             
@@ -64,7 +64,7 @@ class AuthRepositoryImpl(
 
             val request = SignInRequest(email = email, password = password)
             val response = authApiService.signIn(request)
-            val user = response.toDomain()
+            val user = response.toUserDomain()
             
             saveUser(user)
             
