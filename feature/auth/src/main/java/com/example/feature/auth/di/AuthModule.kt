@@ -11,7 +11,9 @@ import com.example.feature.auth.domain.usecase.IsUserLoggedInUseCase
 import com.example.feature.auth.domain.usecase.SignInUseCase
 import com.example.feature.auth.domain.usecase.SignOutUseCase
 import com.example.feature.auth.domain.usecase.SignUpUseCase
+import com.example.feature.auth.presentation.splash.SplashViewModel
 import org.koin.android.ext.koin.androidContext
+import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.dsl.module
 
 val authModule = module {
@@ -32,4 +34,6 @@ val authModule = module {
     factory { SignOutUseCase(get()) }
     factory { GetCurrentUserUseCase(get()) }
     factory { IsUserLoggedInUseCase(get()) }
+    
+    viewModel { SplashViewModel(get()) }
 }

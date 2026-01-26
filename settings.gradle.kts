@@ -35,4 +35,4 @@ plugins {
 include(":composeApp")
 include(":shared")
 include(":core")
-include(":feature")
+include(":feature:auth")
