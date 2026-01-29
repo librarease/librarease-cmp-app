@@ -3,34 +3,50 @@ package com.example.feature.auth.domain.validation
 object AuthValidator {
     
     fun validateEmail(email: String): ValidationResult {
-        return when {
-            email.isBlank() -> ValidationResult.Invalid("Email cannot be empty")
-            !android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches() -> 
-                ValidationResult.Invalid("Invalid email format")
-            else -> ValidationResult.Valid
+        if (email.isBlank()) {
+            return ValidationResult(false, "Email cannot be empty")
         }
+        
+        if (!ValidationRegex.EMAIL_REGEX.matches(email)) {
+            return ValidationResult(false, "Invalid email format")
+        }
+        
+        return ValidationResult(true)
     }
     
     fun validatePassword(password: String): ValidationResult {
-        return when {
-            password.isBlank() -> ValidationResult.Invalid("Password cannot be empty")
-            password.length < 8 -> ValidationResult.Invalid("Password must be at least 8 characters")
-            !password.any { it.isDigit() } -> ValidationResult.Invalid("Password must contain at least one digit")
-            !password.any { it.isUpperCase() } -> ValidationResult.Invalid("Password must contain at least one uppercase letter")
-            else -> ValidationResult.Valid
+        if (password.isBlank()) {
+            return ValidationResult(false, "Password cannot be empty")
         }
+        
+        if (password.length < 8) {
+            return ValidationResult(false, "Password must be at least 8 characters")
+        }
+        
+        if (!ValidationRegex.PASSWORD_REGEX.matches(password)) {
+            return ValidationResult(
+                false, 
+                "Password must contain uppercase, lowercase, number and special character"
+            )
+        }
+        
+        return ValidationResult(true)
     }
     
     fun validateName(name: String): ValidationResult {
-        return when {
-            name.isBlank() -> ValidationResult.Invalid("Name cannot be empty")
-            name.length < 2 -> ValidationResult.Invalid("Name must be at least 2 characters")
-            else -> ValidationResult.Valid
+        if (name.isBlank()) {
+            return ValidationResult(false, "Name cannot be empty")
         }
+        
+        if (name.length < 2) {
+            return ValidationResult(false, "Name must be at least 2 characters")
+        }
+        
+        return ValidationResult(true)
     }
 }
 
-sealed class ValidationResult {
-    data object Valid : ValidationResult()
-    data class Invalid(val message: String) : ValidationResult()
-}
+data class ValidationResult(
+    val isValid: Boolean,
+    val errorMessage: String? = null
+)
