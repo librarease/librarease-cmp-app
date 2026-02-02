@@ -89,7 +89,7 @@ fun SignUpScreen(
             Spacer(modifier = Modifier.height(24.dp))
 
             Text(
-                text = "LibraryHub",
+                text = "Librarease",
                 fontSize = 32.sp,
                 fontWeight = FontWeight.Bold,
                 color = colorResource(id = com.example.core.R.color.primary)
@@ -183,7 +183,7 @@ fun SignUpScreen(
                     unfocusedBorderColor = colorResource(id = com.example.core.R.color.border)
                 )
             )
-
+ 
             Spacer(modifier = Modifier.height(16.dp))
 
             Text(
