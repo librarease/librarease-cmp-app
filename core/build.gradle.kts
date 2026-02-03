@@ -52,7 +52,8 @@ dependencies {
     
     // DataStore
     api("androidx.datastore:datastore-preferences:1.1.1")
-    
+    implementation(libs.androidx.compose.foundation)
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.testExt.junit)
     androidTestImplementation(libs.androidx.espresso.core)
