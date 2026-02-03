@@ -12,9 +12,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Lock
@@ -36,7 +37,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -46,6 +46,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.core.presentation.bottomGlow
 
 @Composable
 fun SignInScreen(
@@ -66,7 +67,7 @@ fun SignInScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(24.dp),
+                .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Spacer(modifier = Modifier.height(60.dp))
@@ -74,8 +75,12 @@ fun SignInScreen(
             Box(
                 modifier = Modifier
                     .size(100.dp)
-                    .clip(RoundedCornerShape(32.dp))
-                    .background(colorResource(id = com.example.core.R.color.accent)),
+                    .bottomGlow(
+                        16.dp
+                    )
+                    .background(
+                        color= colorResource(id = com.example.core.R.color.accent),
+                        shape = RoundedCornerShape(24.dp)),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
@@ -102,166 +107,180 @@ fun SignInScreen(
 
             Spacer(modifier = Modifier.height(48.dp))
 
-            Text(
-                text = "Welcome back",
-                fontSize = 28.sp,
-                fontWeight = FontWeight.Bold,
-                color = colorResource(id = com.example.core.R.color.primary),
-                modifier = Modifier.align(Alignment.Start)
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Text(
-                text = "Sign in to continue journey",
-                fontSize = 14.sp,
-                color = colorResource(id = com.example.core.R.color.secondary),
-                modifier = Modifier.align(Alignment.Start)
-            )
-
-            Spacer(modifier = Modifier.height(32.dp))
-
-            Text(
-                text = "Email",
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Medium,
-                color = colorResource(id = com.example.core.R.color.primary),
-                modifier = Modifier.align(Alignment.Start)
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            OutlinedTextField(
-                value = email,
-                onValueChange = { email = it },
-                modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text("Enter your email") },
-                leadingIcon = {
-                    Icon(
-                        imageVector = Icons.Default.Email,
-                        contentDescription = "Email"
-                    )
-                },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                singleLine = true,
-                shape = RoundedCornerShape(12.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = colorResource(id = com.example.core.R.color.accent),
-                    unfocusedBorderColor = colorResource(id = com.example.core.R.color.border)
-                )
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Text(
-                text = "Password",
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Medium,
-                color = colorResource(id = com.example.core.R.color.primary),
-                modifier = Modifier.align(Alignment.Start)
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            OutlinedTextField(
-                value = password,
-                onValueChange = { password = it },
-                modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text("Enter your password") },
-                leadingIcon = {
-                    Icon(
-                        imageVector = Icons.Default.Lock,
-                        contentDescription = "Password"
-                    )
-                },
-                trailingIcon = {
-                    IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                        Icon(
-                            imageVector = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
-                            contentDescription = if (passwordVisible) "Hide password" else "Show password"
-                        )
-                    }
-                },
-                visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                singleLine = true,
-                shape = RoundedCornerShape(12.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = colorResource(id = com.example.core.R.color.accent),
-                    unfocusedBorderColor = colorResource(id = com.example.core.R.color.border)
-                )
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Text(
-                text = "Forgot password?",
-                fontSize = 14.sp,
-                color = colorResource(id = com.example.core.R.color.primary),
-                modifier = Modifier
-                    .align(Alignment.End)
-                    .clickable { onForgotPasswordClick() }
-            )
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Button(
-                onClick = { onSignInClick(email, password) },
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(56.dp),
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = colorResource(id = com.example.core.R.color.accent)
-                )
+                    .clip(shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp))
+                    .background(colorResource(id = com.example.core.R.color.surface_light))
+                    .padding(24.dp)
             ) {
-                Text(
-                    text = "Sign In",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.SemiBold
-                )
-            }
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                ) {
+                    Text(
+                        text = "Welcome back",
+                        fontSize = 28.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = colorResource(id = com.example.core.R.color.primary),
+                        modifier = Modifier
+                            .padding(top = 12.dp)
+                    )
 
-            Spacer(modifier = Modifier.height(24.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                HorizontalDivider(
-                    modifier = Modifier.weight(1f),
-                    color = colorResource(id = com.example.core.R.color.border)
-                )
-                Text(
-                    text = "OR",
-                    fontSize = 12.sp,
-                    color = colorResource(id = com.example.core.R.color.secondary),
-                    modifier = Modifier.padding(horizontal = 16.dp)
-                )
-                HorizontalDivider(
-                    modifier = Modifier.weight(1f),
-                    color = colorResource(id = com.example.core.R.color.border)
-                )
-            }
+                    Text(
+                        text = "Sign in to continue journey",
+                        fontSize = 14.sp,
+                        color = colorResource(id = com.example.core.R.color.secondary)
+                    )
 
-            Spacer(modifier = Modifier.height(24.dp))
+                    Spacer(modifier = Modifier.height(24.dp))
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Center
-            ) {
-                Text(
-                    text = "New to Librarease? ",
-                    fontSize = 14.sp,
-                    color = colorResource(id = com.example.core.R.color.secondary)
-                )
-                Text(
-                    text = "Create Account",
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = colorResource(id = com.example.core.R.color.primary),
-                    modifier = Modifier.clickable { onCreateAccountClick() }
-                )
+                    Text(
+                        text = "Email",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = colorResource(id = com.example.core.R.color.primary)
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    OutlinedTextField(
+                        value = email,
+                        onValueChange = { email = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        placeholder = { Text("Enter your email") },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.Email,
+                                contentDescription = "Email"
+                            )
+                        },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                        singleLine = true,
+                        shape = RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = colorResource(id = com.example.core.R.color.accent),
+                            unfocusedBorderColor = colorResource(id = com.example.core.R.color.surface_light)
+                        )
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Text(
+                        text = "Password",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = colorResource(id = com.example.core.R.color.primary)
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    OutlinedTextField(
+                        value = password,
+                        onValueChange = { password = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        placeholder = { Text("Enter your password") },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.Lock,
+                                contentDescription = "Password"
+                            )
+                        },
+                        trailingIcon = {
+                            IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                                Icon(
+                                    imageVector = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                                    contentDescription = if (passwordVisible) "Hide password" else "Show password"
+                                )
+                            }
+                        },
+                        visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                        singleLine = true,
+                        shape = RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = colorResource(id = com.example.core.R.color.accent),
+                            unfocusedBorderColor = colorResource(id = com.example.core.R.color.surface_light)
+                        )
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Text(
+                        text = "Forgot password?",
+                        fontSize = 14.sp,
+                        color = colorResource(id = com.example.core.R.color.primary),
+                        modifier = Modifier
+                            .align(Alignment.End)
+                            .clickable { onForgotPasswordClick() }
+                    )
+
+                    Spacer(modifier = Modifier.height(20.dp))
+
+                    Button(
+                        onClick = { onSignInClick(email, password) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .bottomGlow(16.dp, shape = RoundedCornerShape(16.dp))
+                            .height(56.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = colorResource(id = com.example.core.R.color.accent)
+                        )
+                    ) {
+                        Text(
+                            text = "Sign In",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(20.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        HorizontalDivider(
+                            modifier = Modifier.weight(1f),
+                            color = colorResource(id = com.example.core.R.color.border)
+                        )
+                        Text(
+                            text = "OR",
+                            fontSize = 12.sp,
+                            color = colorResource(id = com.example.core.R.color.secondary),
+                            modifier = Modifier.padding(horizontal = 16.dp)
+                        )
+                        HorizontalDivider(
+                            modifier = Modifier.weight(1f),
+                            color = colorResource(id = com.example.core.R.color.border)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(20.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Text(
+                            text = "New to Librarease? ",
+                            fontSize = 14.sp,
+                            color = colorResource(id = com.example.core.R.color.secondary)
+                        )
+                        Text(
+                            text = "Create Account",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = colorResource(id = com.example.core.R.color.primary),
+                            modifier = Modifier.clickable { onCreateAccountClick() }
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(20.dp))
+                }
             }
         }
     }
