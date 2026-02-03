@@ -125,7 +125,7 @@ fun SignUpScreen(
                         fontWeight = FontWeight.Bold,
                         color = colorResource(id = com.example.core.R.color.primary),
                         modifier = Modifier
-                            .padding(vertical = 12.dp)
+                            .padding(top = 12.dp)
                     )
 
                     Spacer(modifier = Modifier.height(8.dp))
@@ -136,7 +136,7 @@ fun SignUpScreen(
                         color = colorResource(id = com.example.core.R.color.secondary)
                     )
 
-                    Spacer(modifier = Modifier.height(32.dp))
+                    Spacer(modifier = Modifier.height(24.dp))
 
                     Text(
                         text = "Name",
@@ -166,7 +166,7 @@ fun SignUpScreen(
                         )
                     )
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
 
                     Text(
                         text = "Email",
@@ -197,7 +197,7 @@ fun SignUpScreen(
                         )
                     )
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
 
                     Text(
                         text = "Password",
@@ -237,7 +237,7 @@ fun SignUpScreen(
                         )
                     )
 
-                    Spacer(modifier = Modifier.height(24.dp))
+                    Spacer(modifier = Modifier.height(20.dp))
 
                     Button(
                         onClick = { onSignUpClick(name, email, password) },
@@ -257,7 +257,7 @@ fun SignUpScreen(
                         )
                     }
 
-                    Spacer(modifier = Modifier.height(24.dp))
+                    Spacer(modifier = Modifier.height(20.dp))
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -279,7 +279,7 @@ fun SignUpScreen(
                         )
                     }
 
-                    Spacer(modifier = Modifier.height(24.dp))
+                    Spacer(modifier = Modifier.height(20.dp))
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),
