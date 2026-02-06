@@ -94,9 +94,7 @@ fun AuthNavGraph(
             }
             
             SignUpScreen(
-                onSignUpClick = { name, email, password ->
-                    viewModel.signUp(name, email, password)
-                },
+                viewModel = viewModel,
                 onGoogleSignUpClick = {
                     // TODO: Implement Google Sign-Up
                 },

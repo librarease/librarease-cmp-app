@@ -1,5 +1,6 @@
 package com.example.core.network
 
+import android.util.Log
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.android.Android
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
@@ -10,6 +11,8 @@ import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
 
 object HttpClientProvider {
+    
+    private const val TAG = "HttpClient"
     
     fun provideHttpClient(): HttpClient {
         return HttpClient(Android) {
@@ -24,7 +27,7 @@ object HttpClientProvider {
             install(Logging) {
                 logger = object : Logger {
                     override fun log(message: String) {
-                        println("HTTP Client: $message")
+                        Log.d(TAG, message)
                     }
                 }
                 level = LogLevel.ALL

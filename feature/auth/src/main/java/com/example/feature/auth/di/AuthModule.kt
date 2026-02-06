@@ -1,9 +1,6 @@
 package com.example.feature.auth.di
 
-import com.example.feature.auth.data.remote.AuthApi
-import com.example.feature.auth.data.remote.AuthApiImpl
 import com.example.feature.auth.data.remote.AuthApiService
-import com.example.feature.auth.data.remote.AuthServiceImpl
 import com.example.feature.auth.data.repository.AuthRepositoryImpl
 import com.example.feature.auth.domain.repository.AuthRepository
 import com.example.feature.auth.domain.usecase.GetCurrentUserUseCase
@@ -20,9 +17,7 @@ import org.koin.dsl.module
 
 val authModule = module {
     
-    single<AuthApi> { AuthApiImpl(get()) }
-    
-    single<AuthApiService> { AuthServiceImpl(get()) }
+    single { AuthApiService(get()) }
     
     single<AuthRepository> {
         AuthRepositoryImpl(

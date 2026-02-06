@@ -1,6 +1,7 @@
 package com.example.feature.auth.data.repository
 
 import android.content.Context
+import android.util.Log
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
@@ -28,16 +29,21 @@ class AuthRepositoryImpl(
 ) : AuthRepository {
 
     companion object {
+        private const val TAG = "AuthRepository"
         private val USER_KEY = stringPreferencesKey("user_data")
     }
 
     override suspend fun signUp(email: String, password: String, name: String): AuthResult<User> {
         return try {
+            Log.d(TAG, "SignUp started for email: $email, name: $name")
+            
             if (!isValidEmail(email)) {
+                Log.d(TAG, "SignUp failed: Invalid email format")
                 return AuthResult.Error("Invalid email format", AuthErrorCode.INVALID_EMAIL)
             }
             
             if (!isValidPassword(password)) {
+                Log.d(TAG, "SignUp failed: Weak password")
                 return AuthResult.Error(
                     "Password must be at least 8 characters",
                     AuthErrorCode.WEAK_PASSWORD
@@ -45,13 +51,17 @@ class AuthRepositoryImpl(
             }
 
             val request = SignUpRequest(email = email, password = password, name = name)
+            Log.d(TAG, "Making API call to sign up...")
             val response = authApiService.signUp(request)
-            val user = response.toUserDomain()
+            Log.d(TAG, "API call successful, response received")
             
+            val user = response.toUserDomain()
             saveUser(user)
             
+            Log.d(TAG, "SignUp successful for user: ${user.email}")
             AuthResult.Success(user)
         } catch (e: Exception) {
+            Log.e(TAG, "SignUp failed with exception: ${e.message}", e)
             handleAuthException(e)
         }
     }

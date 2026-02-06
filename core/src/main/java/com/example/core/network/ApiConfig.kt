@@ -1,5 +1,5 @@
 package com.example.core.network
 
 object ApiConfig {
-    const val BASE_URL = "https://api.librarease.org/"
+    const val BASE_URL = "https://api.librarease.org/v1/"
 }
