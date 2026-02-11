@@ -11,6 +11,7 @@ import com.example.feature.auth.domain.usecase.SignUpUseCase
 import com.example.feature.auth.presentation.signin.SignInViewModel
 import com.example.feature.auth.presentation.signup.SignUpViewModel
 import com.example.feature.auth.presentation.splash.SplashViewModel
+import com.google.firebase.auth.FirebaseAuth
 import org.koin.android.ext.koin.androidContext
 import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.dsl.module
@@ -18,10 +19,13 @@ import org.koin.dsl.module
 val authModule = module {
     
     single { AuthApiService(get()) }
+
+    single { FirebaseAuth.getInstance() }
     
     single<AuthRepository> {
         AuthRepositoryImpl(
             authApiService = get(),
+            firebaseAuth = get(),
             context = androidContext()
         )
     }

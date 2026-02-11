@@ -7,7 +7,6 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
-import com.example.feature.auth.data.model.SignInRequest
 import com.example.feature.auth.data.model.SignUpRequest
 import com.example.feature.auth.data.model.toUserDomain
 import com.example.feature.auth.data.remote.AuthApiService
@@ -15,15 +14,23 @@ import com.example.feature.auth.domain.model.AuthErrorCode
 import com.example.feature.auth.domain.model.AuthResult
 import com.example.feature.auth.domain.model.User
 import com.example.feature.auth.domain.repository.AuthRepository
+import com.google.firebase.FirebaseNetworkException
+import com.google.firebase.FirebaseTooManyRequestsException
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
+import com.google.firebase.auth.FirebaseAuthInvalidUserException
+import com.google.firebase.auth.FirebaseAuthUserCollisionException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.tasks.await
 import kotlinx.serialization.json.Json
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "auth_prefs")
 
 class AuthRepositoryImpl(
     private val authApiService: AuthApiService,
+    private val firebaseAuth: FirebaseAuth,
     private val context: Context,
     private val json: Json = Json { ignoreUnknownKeys = true }
 ) : AuthRepository {
@@ -68,24 +75,36 @@ class AuthRepositoryImpl(
 
     override suspend fun signIn(email: String, password: String): AuthResult<User> {
         return try {
-            if (!isValidEmail(email)) {
+            val trimmedEmail = email.trim()
+            if (!isValidEmail(trimmedEmail)) {
                 return AuthResult.Error("Invalid email format", AuthErrorCode.INVALID_EMAIL)
             }
 
-            val request = SignInRequest(email = email, password = password)
-            val response = authApiService.signIn(request)
-            val user = response.toUserDomain()
-            
+            val authResult = firebaseAuth
+                .signInWithEmailAndPassword(trimmedEmail, password)
+                .await()
+
+            val firebaseUser = authResult.user
+                ?: return AuthResult.Error("Sign in failed", AuthErrorCode.UNKNOWN_ERROR)
+
+            val user = User(
+                id = firebaseUser.uid,
+                name = firebaseUser.displayName.orEmpty(),
+                email = firebaseUser.email ?: trimmedEmail,
+                createdAt = "",
+                updatedAt = ""
+            )
+
             saveUser(user)
-            
             AuthResult.Success(user)
         } catch (e: Exception) {
-            handleAuthException(e)
+            handleSignInException(e)
         }
     }
 
     override suspend fun signOut(): AuthResult<Unit> {
         return try {
+            firebaseAuth.signOut()
             clearUser()
             AuthResult.Success(Unit)
         } catch (e: Exception) {
@@ -149,6 +168,23 @@ class AuthRepositoryImpl(
             exception.message?.contains("network", ignoreCase = true) == true -> 
                 AuthResult.Error("Network error. Please check your connection", AuthErrorCode.NETWORK_ERROR)
             else -> 
+                AuthResult.Error(exception.message ?: "Unknown error occurred", AuthErrorCode.UNKNOWN_ERROR)
+        }
+    }
+
+    private fun handleSignInException(exception: Exception): AuthResult.Error {
+        return when (exception) {
+            is FirebaseAuthInvalidUserException ->
+                AuthResult.Error("User not found", AuthErrorCode.USER_NOT_FOUND)
+            is FirebaseAuthInvalidCredentialsException ->
+                AuthResult.Error("Invalid email or password", AuthErrorCode.INVALID_PASSWORD)
+            is FirebaseTooManyRequestsException ->
+                AuthResult.Error("Too many attempts. Try again later.", AuthErrorCode.UNKNOWN_ERROR)
+            is FirebaseNetworkException ->
+                AuthResult.Error("Network error. Please check your connection", AuthErrorCode.NETWORK_ERROR)
+            is FirebaseAuthUserCollisionException ->
+                AuthResult.Error("Email already exists", AuthErrorCode.EMAIL_ALREADY_EXISTS)
+            else ->
                 AuthResult.Error(exception.message ?: "Unknown error occurred", AuthErrorCode.UNKNOWN_ERROR)
         }
     }

@@ -7,6 +7,7 @@ plugins {
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.composeHotReload)
+    alias(libs.plugins.googleServices)
 }
 
 kotlin {
@@ -51,11 +52,11 @@ kotlin {
 }
 
 android {
-    namespace = "com.example.librarease"
+    namespace = "org.librarease.cmpApp"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
 
     defaultConfig {
-        applicationId = "com.example.librarease"
+        applicationId = "org.librarease.cmpApp"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
         versionCode = 1

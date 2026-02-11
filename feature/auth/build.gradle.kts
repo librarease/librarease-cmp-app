@@ -64,6 +64,11 @@ dependencies {
     
     // Google Sign-In
     implementation(libs.play.services.auth)
+
+    // Firebase Auth (email/password sign-in)
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.auth.ktx)
+    implementation(libs.kotlinx.coroutines.play.services)
     
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
