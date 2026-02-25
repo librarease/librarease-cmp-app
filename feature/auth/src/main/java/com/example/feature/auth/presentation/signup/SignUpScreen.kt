@@ -30,11 +30,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -59,22 +56,10 @@ import org.koin.androidx.compose.koinViewModel
 @Composable
 fun SignUpScreen(
     viewModel: SignUpViewModel = koinViewModel(),
-    onSignUpClick: (String, String, String) -> Unit = { _, _, _ -> },
     onGoogleSignUpClick: () -> Unit = {},
     onSignInClick: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    val snackbarHostState = remember { SnackbarHostState() }
-    
-    LaunchedEffect(uiState) {
-        when (val state = uiState) {
-            is SignUpUiState.Error -> {
-                snackbarHostState.showSnackbar(state.message)
-                viewModel.resetState()
-            }
-            else -> {}
-        }
-    }
     var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -85,12 +70,6 @@ fun SignUpScreen(
             .fillMaxSize()
             .background(colorResource(id = com.example.core.R.color.background))
     ) {
-        SnackbarHost(
-            hostState = snackbarHostState,
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(16.dp)
-        )
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -102,12 +81,11 @@ fun SignUpScreen(
             Box(
                 modifier = Modifier
                     .size(100.dp)
-                    .bottomGlow(
-                        16.dp
-                    )
+                    .bottomGlow(16.dp)
                     .background(
-                        color= colorResource(id = com.example.core.R.color.accent),
-                        shape = RoundedCornerShape(24.dp)),
+                        color = colorResource(id = com.example.core.R.color.accent),
+                        shape = RoundedCornerShape(24.dp)
+                    ),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
@@ -142,16 +120,14 @@ fun SignUpScreen(
                     .padding(24.dp)
             ) {
                 Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(
                         text = "Create Account",
                         fontSize = 28.sp,
                         fontWeight = FontWeight.Bold,
                         color = colorResource(id = com.example.core.R.color.primary),
-                        modifier = Modifier
-                            .padding(top = 12.dp)
+                        modifier = Modifier.padding(top = 12.dp)
                     )
 
                     Spacer(modifier = Modifier.height(8.dp))
@@ -175,7 +151,10 @@ fun SignUpScreen(
 
                     OutlinedTextField(
                         value = name,
-                        onValueChange = { name = it },
+                        onValueChange = {
+                            name = it
+                            viewModel.onNameChanged()
+                        },
                         modifier = Modifier.fillMaxWidth(),
                         placeholder = { Text("Enter your name") },
                         leadingIcon = {
@@ -186,6 +165,12 @@ fun SignUpScreen(
                         },
                         singleLine = true,
                         shape = RoundedCornerShape(12.dp),
+                        isError = uiState.nameError != null,
+                        supportingText = {
+                            if (uiState.nameError != null) {
+                                Text(text = uiState.nameError ?: "")
+                            }
+                        },
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = colorResource(id = com.example.core.R.color.accent),
                             unfocusedBorderColor = colorResource(id = com.example.core.R.color.surface_light)
@@ -205,7 +190,10 @@ fun SignUpScreen(
 
                     OutlinedTextField(
                         value = email,
-                        onValueChange = { email = it },
+                        onValueChange = {
+                            email = it
+                            viewModel.onEmailChanged()
+                        },
                         modifier = Modifier.fillMaxWidth(),
                         placeholder = { Text("Enter your email") },
                         leadingIcon = {
@@ -217,6 +205,12 @@ fun SignUpScreen(
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                         singleLine = true,
                         shape = RoundedCornerShape(12.dp),
+                        isError = uiState.emailError != null,
+                        supportingText = {
+                            if (uiState.emailError != null) {
+                                Text(text = uiState.emailError ?: "")
+                            }
+                        },
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = colorResource(id = com.example.core.R.color.accent),
                             unfocusedBorderColor = colorResource(id = com.example.core.R.color.surface_light)
@@ -236,7 +230,10 @@ fun SignUpScreen(
 
                     OutlinedTextField(
                         value = password,
-                        onValueChange = { password = it },
+                        onValueChange = {
+                            password = it
+                            viewModel.onPasswordChanged()
+                        },
                         modifier = Modifier.fillMaxWidth(),
                         placeholder = { Text("Enter your password") },
                         leadingIcon = {
@@ -253,15 +250,34 @@ fun SignUpScreen(
                                 )
                             }
                         },
-                        visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                        visualTransformation = if (passwordVisible) {
+                            VisualTransformation.None
+                        } else {
+                            PasswordVisualTransformation()
+                        },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                         singleLine = true,
                         shape = RoundedCornerShape(12.dp),
+                        isError = uiState.passwordError != null,
+                        supportingText = {
+                            if (uiState.passwordError != null) {
+                                Text(text = uiState.passwordError ?: "")
+                            }
+                        },
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = colorResource(id = com.example.core.R.color.accent),
                             unfocusedBorderColor = colorResource(id = com.example.core.R.color.surface_light)
                         )
                     )
+
+                    if (uiState.generalError != null) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = uiState.generalError ?: "",
+                            color = Color(0xFFB00020),
+                            fontSize = 13.sp
+                        )
+                    }
 
                     Spacer(modifier = Modifier.height(20.dp))
 
@@ -275,9 +291,9 @@ fun SignUpScreen(
                         colors = ButtonDefaults.buttonColors(
                             containerColor = colorResource(id = com.example.core.R.color.accent)
                         ),
-                        enabled = uiState !is SignUpUiState.Loading
+                        enabled = !uiState.isLoading
                     ) {
-                        if (uiState is SignUpUiState.Loading) {
+                        if (uiState.isLoading) {
                             CircularProgressIndicator(
                                 color = Color.White,
                                 modifier = Modifier.size(24.dp)

@@ -2,11 +2,9 @@ package com.example.feature.auth.data.repository
 
 import android.content.Context
 import android.util.Log
-import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
-import androidx.datastore.preferences.preferencesDataStore
+import com.example.core.storage.authPrefsDataStore
 import com.example.feature.auth.data.model.SignUpRequest
 import com.example.feature.auth.data.model.toUserDomain
 import com.example.feature.auth.data.remote.AuthApiService
@@ -25,8 +23,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.tasks.await
 import kotlinx.serialization.json.Json
-
-private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "auth_prefs")
 
 class AuthRepositoryImpl(
     private val authApiService: AuthApiService,
@@ -107,7 +103,7 @@ class AuthRepositoryImpl(
 
     override suspend fun getCurrentUser(): User? {
         return try {
-            val userJson = context.dataStore.data.first()[USER_KEY]
+            val userJson = context.authPrefsDataStore.data.first()[USER_KEY]
             userJson?.let { json.decodeFromString<User>(it) }
         } catch (e: Exception) {
             null
@@ -115,7 +111,7 @@ class AuthRepositoryImpl(
     }
 
     override fun isUserLoggedIn(): Flow<Boolean> {
-        return context.dataStore.data.map { preferences ->
+        return context.authPrefsDataStore.data.map { preferences ->
             preferences[USER_KEY] != null
         }
     }
@@ -133,13 +129,13 @@ class AuthRepositoryImpl(
     }
 
     private suspend fun saveUser(user: User) {
-        context.dataStore.edit { preferences ->
+        context.authPrefsDataStore.edit { preferences ->
             preferences[USER_KEY] = json.encodeToString(User.serializer(), user)
         }
     }
 
     private suspend fun clearUser() {
-        context.dataStore.edit { preferences ->
+        context.authPrefsDataStore.edit { preferences ->
             preferences.remove(USER_KEY)
         }
     }

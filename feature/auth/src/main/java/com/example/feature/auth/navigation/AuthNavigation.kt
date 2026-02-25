@@ -4,16 +4,19 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.navigation.NavType
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.navArgument
 import androidx.navigation.compose.rememberNavController
 import com.example.feature.home.presentation.home.HomeScreen
+import com.example.feature.home.presentation.home.HomeViewModel
+import com.example.feature.home.presentation.borrowingdetail.BorrowingDetailScreen
+import com.example.feature.home.presentation.borrowingdetail.BorrowingDetailViewModel
 import com.example.feature.auth.presentation.signin.SignInScreen
-import com.example.feature.auth.presentation.signin.SignInUiState
 import com.example.feature.auth.presentation.signin.SignInViewModel
 import com.example.feature.auth.presentation.signup.SignUpScreen
-import com.example.feature.auth.presentation.signup.SignUpUiState
 import com.example.feature.auth.presentation.signup.SignUpViewModel
 import com.example.feature.auth.presentation.splash.SplashScreen
 import com.example.feature.auth.presentation.splash.SplashViewModel
@@ -24,6 +27,9 @@ sealed class Screen(val route: String) {
     data object SignIn : Screen("signin")
     data object SignUp : Screen("signup")
     data object Home : Screen("home")
+    data object BorrowingDetail : Screen("borrowing/{borrowingId}") {
+        fun routeForId(borrowingId: String): String = "borrowing/$borrowingId"
+    }
 }
 
 @Composable
@@ -57,17 +63,25 @@ fun AuthNavGraph(
             val viewModel: SignInViewModel = koinViewModel()
             val uiState by viewModel.uiState.collectAsState()
             
-            LaunchedEffect(uiState) {
-                if (uiState is SignInUiState.Success) {
+            LaunchedEffect(uiState.isSuccess) {
+                if (uiState.isSuccess) {
                     navController.navigate(Screen.Home.route) {
                         popUpTo(Screen.SignIn.route) { inclusive = true }
                     }
+                    viewModel.consumeSuccess()
                 }
             }
             
             SignInScreen(
+                uiState = uiState,
                 onSignInClick = { email, password ->
                     viewModel.signIn(email, password)
+                },
+                onEmailChanged = {
+                    viewModel.onEmailChanged()
+                },
+                onPasswordChanged = {
+                    viewModel.onPasswordChanged()
                 },
                 onGoogleSignInClick = {
                     // TODO: Implement Google Sign-In
@@ -85,11 +99,12 @@ fun AuthNavGraph(
             val viewModel: SignUpViewModel = koinViewModel()
             val uiState by viewModel.uiState.collectAsState()
             
-            LaunchedEffect(uiState) {
-                if (uiState is SignUpUiState.Success) {
+            LaunchedEffect(uiState.isSuccess) {
+                if (uiState.isSuccess) {
                     navController.navigate(Screen.Home.route) {
                         popUpTo(Screen.SignUp.route) { inclusive = true }
                     }
+                    viewModel.consumeSuccess()
                 }
             }
             
@@ -105,12 +120,47 @@ fun AuthNavGraph(
         }
 
         composable(Screen.Home.route) {
+            val homeViewModel: HomeViewModel = koinViewModel()
+            val homeUiState by homeViewModel.uiState.collectAsState()
+
+            LaunchedEffect(Unit) {
+                homeViewModel.loadHome()
+            }
+
             HomeScreen(
+                uiState = homeUiState,
+                onRefresh = { userId ->
+                    homeViewModel.refresh(userId)
+                },
+                onBorrowingClick = { borrowingId ->
+                    navController.navigate(Screen.BorrowingDetail.routeForId(borrowingId))
+                },
                 onSignOutClick = {
                     navController.navigate(Screen.SignIn.route) {
                         popUpTo(Screen.Home.route) { inclusive = true }
                     }
                 }
+            )
+        }
+
+        composable(
+            route = Screen.BorrowingDetail.route,
+            arguments = listOf(
+                navArgument("borrowingId") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val borrowingId = backStackEntry.arguments?.getString("borrowingId").orEmpty()
+            val detailViewModel: BorrowingDetailViewModel = koinViewModel()
+            val detailUiState by detailViewModel.uiState.collectAsState()
+
+            LaunchedEffect(borrowingId) {
+                detailViewModel.loadBorrowing(borrowingId)
+            }
+
+            BorrowingDetailScreen(
+                uiState = detailUiState,
+                onBackClick = { navController.popBackStack() },
+                onRetryClick = { detailViewModel.loadBorrowing(borrowingId) }
             )
         }
     }

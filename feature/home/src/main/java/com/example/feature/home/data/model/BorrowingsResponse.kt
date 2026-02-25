@@ -1,0 +1,12 @@
+@file:OptIn(kotlinx.serialization.ExperimentalSerializationApi::class)
+
+package com.example.feature.home.data.model
+
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonNames
+
+@Serializable
+data class BorrowingsResponse(
+    @JsonNames("borrowings", "data", "items")
+    val borrowings: List<BorrowingDto> = emptyList()
+)

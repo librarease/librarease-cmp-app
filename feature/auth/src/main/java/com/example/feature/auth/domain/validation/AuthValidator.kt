@@ -1,14 +1,17 @@
 package com.example.feature.auth.domain.validation
 
+import android.util.Patterns
+
 object AuthValidator {
     
     fun validateEmail(email: String): ValidationResult {
-        if (email.isBlank()) {
+        val normalizedEmail = email.trim()
+        if (normalizedEmail.isBlank()) {
             return ValidationResult(false, "Email cannot be empty")
         }
         
-        if (!ValidationRegex.EMAIL_REGEX.matches(email)) {
-            return ValidationResult(false, "Invalid email format")
+        if (!Patterns.EMAIL_ADDRESS.matcher(normalizedEmail).matches()) {
+            return ValidationResult(false, "Please enter a valid email address")
         }
         
         return ValidationResult(true)
@@ -21,13 +24,6 @@ object AuthValidator {
         
         if (password.length < 8) {
             return ValidationResult(false, "Password must be at least 8 characters")
-        }
-        
-        if (!ValidationRegex.PASSWORD_REGEX.matches(password)) {
-            return ValidationResult(
-                false, 
-                "Password must contain uppercase, lowercase, number and special character"
-            )
         }
         
         return ValidationResult(true)

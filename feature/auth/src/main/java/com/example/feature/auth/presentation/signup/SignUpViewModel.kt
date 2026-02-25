@@ -1,85 +1,112 @@
 package com.example.feature.auth.presentation.signup
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.feature.auth.domain.model.AuthErrorCode
 import com.example.feature.auth.domain.model.AuthResult
 import com.example.feature.auth.domain.usecase.SignUpUseCase
 import com.example.feature.auth.domain.validation.AuthValidator
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class SignUpViewModel(
     private val signUpUseCase: SignUpUseCase
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow<SignUpUiState>(SignUpUiState.Idle)
+    private val _uiState = MutableStateFlow(SignUpUiState())
     val uiState: StateFlow<SignUpUiState> = _uiState.asStateFlow()
 
-    init {
-        Log.d(TAG, "SignUpViewModel created")
-    }
-
     fun signUp(name: String, email: String, password: String) {
-        Log.d(TAG, "signUp called with name='$name', email='$email'")
-        
-        val nameValidation = AuthValidator.validateName(name)
-        if (!nameValidation.isValid) {
-            Log.d(TAG, "Name validation failed: ${nameValidation.errorMessage}")
-            _uiState.value = SignUpUiState.Error(nameValidation.errorMessage ?: "Invalid name")
-            return
-        }
+        val normalizedName = name.trim()
+        val normalizedEmail = email.trim()
 
-        val emailValidation = AuthValidator.validateEmail(email)
-        if (!emailValidation.isValid) {
-            Log.d(TAG, "Email validation failed: ${emailValidation.errorMessage}")
-            _uiState.value = SignUpUiState.Error(emailValidation.errorMessage ?: "Invalid email")
-            return
-        }
-
+        val nameValidation = AuthValidator.validateName(normalizedName)
+        val emailValidation = AuthValidator.validateEmail(normalizedEmail)
         val passwordValidation = AuthValidator.validatePassword(password)
-        if (!passwordValidation.isValid) {
-            Log.d(TAG, "Password validation failed: ${passwordValidation.errorMessage}")
-            _uiState.value = SignUpUiState.Error(passwordValidation.errorMessage ?: "Invalid password")
+
+        val hasNameError = !nameValidation.isValid
+        val hasEmailError = !emailValidation.isValid
+        val hasPasswordError = !passwordValidation.isValid
+
+        if (hasNameError || hasEmailError || hasPasswordError) {
+            _uiState.value = SignUpUiState(
+                nameError = nameValidation.errorMessage.takeIf { hasNameError },
+                emailError = emailValidation.errorMessage.takeIf { hasEmailError },
+                passwordError = passwordValidation.errorMessage.takeIf { hasPasswordError }
+            )
             return
         }
 
-        Log.d(TAG, "All validations passed, setting Loading state")
-        _uiState.value = SignUpUiState.Loading
+        _uiState.value = SignUpUiState(isLoading = true)
 
         viewModelScope.launch {
-            Log.d(TAG, "Calling signUpUseCase...")
-            when (val result = signUpUseCase(email, password, name)) {
+            when (val result = signUpUseCase(normalizedEmail, password, normalizedName)) {
                 is AuthResult.Success -> {
-                    Log.d(TAG, "SignUp successful!")
-                    _uiState.value = SignUpUiState.Success
+                    _uiState.value = SignUpUiState(isSuccess = true)
                 }
                 is AuthResult.Error -> {
-                    Log.e(TAG, "SignUp error: ${result.message}")
-                    _uiState.value = SignUpUiState.Error(result.message)
+                    _uiState.value = mapErrorToUiState(result)
                 }
                 is AuthResult.Loading -> {
-                    Log.d(TAG, "SignUp still loading")
-                    _uiState.value = SignUpUiState.Loading
+                    _uiState.value = SignUpUiState(isLoading = true)
                 }
             }
         }
     }
 
-    companion object {
-        private const val TAG = "SignUpViewModel"
+    fun onNameChanged() {
+        _uiState.update { state ->
+            state.copy(nameError = null, generalError = null)
+        }
     }
 
-    fun resetState() {
-        _uiState.value = SignUpUiState.Idle
+    fun onEmailChanged() {
+        _uiState.update { state ->
+            state.copy(emailError = null, generalError = null)
+        }
+    }
+
+    fun onPasswordChanged() {
+        _uiState.update { state ->
+            state.copy(passwordError = null, generalError = null)
+        }
+    }
+
+    fun consumeSuccess() {
+        _uiState.update { state ->
+            state.copy(isSuccess = false)
+        }
+    }
+
+    private fun mapErrorToUiState(error: AuthResult.Error): SignUpUiState {
+        return when (error.code) {
+            AuthErrorCode.INVALID_EMAIL -> SignUpUiState(
+                emailError = "Please enter a valid email address"
+            )
+            AuthErrorCode.EMAIL_ALREADY_EXISTS -> SignUpUiState(
+                emailError = "An account already exists for this email"
+            )
+            AuthErrorCode.WEAK_PASSWORD -> SignUpUiState(
+                passwordError = "Password must be at least 8 characters"
+            )
+            AuthErrorCode.NETWORK_ERROR -> SignUpUiState(
+                generalError = "Network error. Check your connection and try again."
+            )
+            else -> SignUpUiState(
+                generalError = error.message
+            )
+        }
     }
 }
 
-sealed class SignUpUiState {
-    data object Idle : SignUpUiState()
-    data object Loading : SignUpUiState()
-    data object Success : SignUpUiState()
-    data class Error(val message: String) : SignUpUiState()
-}
+data class SignUpUiState(
+    val isLoading: Boolean = false,
+    val isSuccess: Boolean = false,
+    val nameError: String? = null,
+    val emailError: String? = null,
+    val passwordError: String? = null,
+    val generalError: String? = null
+)
