@@ -1,6 +1,4 @@
-@file:OptIn(kotlinx.serialization.ExperimentalSerializationApi::class)
-
-package com.example.feature.home.data.model
+package com.example.feature.home.data.model.borrowing_model
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable

@@ -40,6 +40,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -98,6 +99,7 @@ fun SignInScreen(
             Text(
                 text = "Librarease",
                 fontSize = 32.sp,
+                fontFamily = FontFamily.SansSerif,
                 fontWeight = FontWeight.Bold,
                 color = colorResource(id = com.example.core.R.color.primary)
             )
@@ -124,6 +126,7 @@ fun SignInScreen(
                     Text(
                         text = "Welcome back",
                         fontSize = 28.sp,
+                        fontFamily = FontFamily.SansSerif,
                         fontWeight = FontWeight.Bold,
                         color = colorResource(id = com.example.core.R.color.primary),
                         modifier = Modifier.padding(top = 12.dp)

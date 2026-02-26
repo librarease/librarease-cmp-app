@@ -1,11 +1,24 @@
 package com.example.feature.home.data.model
 
-import com.example.feature.home.domain.model.BorrowedBook
+import com.example.feature.home.data.model.bood_model.BookColorsDto
+import com.example.feature.home.data.model.bood_model.BookDetailDto
+import com.example.feature.home.data.model.bood_model.BookDto
+import com.example.feature.home.data.model.bood_model.BookStatsDto
+import com.example.feature.home.data.model.bood_model.HslColorDto
+import com.example.feature.home.data.model.bood_model.LibraryDto
+import com.example.feature.home.data.model.borrowing_model.BorrowingDto
+import com.example.feature.home.data.model.borrowing_model.ReturningDto
+import com.example.feature.home.data.model.library_model.LibraryDetailDto
+import com.example.feature.home.data.model.subscription_model.SubscriptionDto
 import com.example.feature.home.domain.model.Borrowing
+import com.example.feature.home.domain.model.BookDetail
 import com.example.feature.home.domain.model.BookPalette
+import com.example.feature.home.domain.model.BookStats
+import com.example.feature.home.domain.model.BorrowedBook
 import com.example.feature.home.domain.model.HslColor
-import com.example.feature.home.domain.model.Membership
+import com.example.feature.home.domain.model.LibraryInfo
 import com.example.feature.home.domain.model.Returning
+import com.example.feature.home.domain.model.Subscription
 
 fun BorrowingDto.toDomain(): Borrowing {
     val mappedBook = book?.toDomain() ?: BorrowedBook(
@@ -44,6 +57,40 @@ fun BookDto.toDomain(): BorrowedBook {
     )
 }
 
+fun BookDetailDto.toDomain(): BookDetail {
+    return BookDetail(
+        id = id,
+        title = title,
+        author = author.orEmpty(),
+        year = year,
+        code = code,
+        coverUrl = coverUrl,
+        colors = colors?.toDomain(),
+        libraryId = libraryId,
+        description = description,
+        stats = stats?.toDomain(),
+        library = library?.toDomain()
+    )
+}
+
+fun BookDetail.toDto(): BookDetailDto {
+    return BookDetailDto(
+        id = id,
+        title = title,
+        author = author,
+        year = year,
+        code = code,
+        coverUrl = coverUrl,
+        colors = colors?.toDto(),
+        libraryId = libraryId,
+        description = description,
+        createdAt = null,
+        updatedAt = null,
+        library = library?.toDto(),
+        stats = stats?.toDto()
+    )
+}
+
 private fun ReturningDto.toDomain(): Returning {
     return Returning(
         id = id,
@@ -65,6 +112,52 @@ private fun BookColorsDto.toDomain(): BookPalette {
     )
 }
 
+private fun BookPalette.toDto(): BookColorsDto {
+    return BookColorsDto(
+        muted = muted?.toDto(),
+        vibrant = vibrant?.toDto(),
+        darkMuted = darkMuted?.toDto(),
+        lightMuted = lightMuted?.toDto(),
+        darkVibrant = darkVibrant?.toDto(),
+        lightVibrant = lightVibrant?.toDto()
+    )
+}
+
+private fun BookStatsDto.toDomain(): BookStats {
+    return BookStats(
+        borrowCount = borrowCount ?: 0,
+        reviewCount = reviewCount ?: 0,
+        rating = rating ?: 0.0
+    )
+}
+
+private fun BookStats.toDto(): BookStatsDto {
+    return BookStatsDto(
+        borrowCount = borrowCount,
+        reviewCount = reviewCount,
+        rating = rating
+    )
+}
+
+private fun LibraryDto.toDomain(): LibraryInfo {
+    return LibraryInfo(
+        id = id,
+        name = name,
+        logo = logo,
+        address = null
+    )
+}
+
+private fun LibraryInfo.toDto(): LibraryDto {
+    return LibraryDto(
+        id = id,
+        name = name,
+        logo = logo,
+        createdAt = null,
+        updatedAt = null
+    )
+}
+
 private fun HslColorDto.toDomain(): HslColor? {
     val hue = h ?: return null
     val saturation = s ?: return null
@@ -76,12 +169,50 @@ private fun HslColorDto.toDomain(): HslColor? {
     )
 }
 
-fun MembershipDto.toDomain(): Membership {
-    return Membership(
+private fun HslColor.toDto(): HslColorDto {
+    return HslColorDto(
+        h = h,
+        s = s,
+        l = l,
+        space = "hsl"
+    )
+}
+
+fun SubscriptionDto.toDomain(): Subscription {
+    val resolvedLibraryId = membership?.libraryId ?: membership?.library?.id
+    return Subscription(
+        id = id.orEmpty(),
+        userId = userId,
+        membershipId = membershipId,
+        libraryId = resolvedLibraryId,
+        libraryLogoUrl = null,
+        createdAt = createdDate,
+        expiresAt = expireDate,
+        amount = amount,
+        finePerDay = finePerDay,
+        loanPeriod = loanPeriod,
+        activeLoanLimit = activeLoanLimit,
+        membershipName = membership?.name.orEmpty(),
+        libraryName = membership?.library?.name
+    )
+}
+
+fun LibraryDetailDto.toDomain(): LibraryInfo {
+    return LibraryInfo(
         id = id,
         name = name,
-        tier = tier.orEmpty(),
-        status = status.orEmpty(),
-        expiresAt = expiresAt
+        logo = logo,
+        address = address
+    )
+}
+
+fun LibraryInfo.toLibraryDetailDto(): LibraryDetailDto {
+    return LibraryDetailDto(
+        id = id,
+        name = name,
+        logo = logo,
+        address = address,
+        createdAt = null,
+        updatedAt = null
     )
 }

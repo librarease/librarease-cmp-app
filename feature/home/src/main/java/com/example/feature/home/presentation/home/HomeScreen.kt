@@ -20,8 +20,11 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.AccountBalance
 import androidx.compose.material.icons.outlined.DateRange
 import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material.icons.outlined.MenuBook
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.Search
@@ -29,12 +32,17 @@ import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Subscriptions
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -58,7 +66,7 @@ import com.example.core.R
 import com.example.feature.home.domain.model.BorrowedBook
 import com.example.feature.home.domain.model.Borrowing
 import com.example.feature.home.domain.model.HslColor
-import com.example.feature.home.domain.model.Membership
+import com.example.feature.home.domain.model.Subscription
 import java.text.SimpleDateFormat
 import java.util.Locale
 import java.util.TimeZone
@@ -69,10 +77,12 @@ fun HomeScreen(
     uiState: HomeUiState,
     onRefresh: (String?) -> Unit = {},
     onBorrowingClick: (String) -> Unit = {},
+    onSubscriptionClick: (String) -> Unit = {},
     onSignOutClick: () -> Unit = {}
 ) {
     val scrollState = rememberScrollState()
     var selectedNavIndex by remember { mutableIntStateOf(0) }
+    var searchQuery by rememberSaveable { mutableStateOf("") }
 
     Box(
         modifier = Modifier
@@ -90,17 +100,25 @@ fun HomeScreen(
             GreetingHeader()
 
             Spacer(modifier = Modifier.height(16.dp))
-            SearchBar()
+            SearchBar(
+                value = searchQuery,
+                onValueChange = { searchQuery = it },
+                onClear = { searchQuery = "" }
+            )
 
             Spacer(modifier = Modifier.height(24.dp))
             BorrowingsSection(
                 uiState = uiState,
+                searchQuery = searchQuery,
                 onRetry = { onRefresh(null) },
                 onBorrowingClick = onBorrowingClick
             )
 
             Spacer(modifier = Modifier.height(24.dp))
-            MembershipsSection(uiState = uiState)
+            SubscriptionsSection(
+                uiState = uiState,
+                onSubscriptionClick = onSubscriptionClick
+            )
         }
 
         BottomNavigationBar(
@@ -117,15 +135,22 @@ fun HomeScreen(
 @Composable
 private fun BorrowingsSection(
     uiState: HomeUiState,
+    searchQuery: String,
     onRetry: () -> Unit,
     onBorrowingClick: (String) -> Unit
 ) {
     if (uiState is HomeUiState.Idle) return
 
     val borrowings = (uiState as? HomeUiState.Content)?.borrowings.orEmpty()
+    val trimmedQuery = searchQuery.trim()
+    val filteredBorrowings = if (trimmedQuery.isBlank()) {
+        borrowings
+    } else {
+        borrowings.filter { it.matchesQuery(trimmedQuery) }
+    }
     HeaderWithCount(
         title = "Active Borrowings",
-        count = borrowings.size
+        count = filteredBorrowings.size
     )
     Spacer(modifier = Modifier.height(12.dp))
 
@@ -137,11 +162,16 @@ private fun BorrowingsSection(
             onRetry = onRetry
         )
         is HomeUiState.Content -> {
-            if (borrowings.isEmpty()) {
-                EmptyCard(message = "No borrowed books yet")
+            if (filteredBorrowings.isEmpty()) {
+                val emptyMessage = if (trimmedQuery.isBlank()) {
+                    "No borrowed books yet"
+                } else {
+                    "No results for \"$trimmedQuery\""
+                }
+                EmptyCard(message = emptyMessage)
             } else {
                 BorrowingsRow(
-                    borrowings = borrowings,
+                    borrowings = filteredBorrowings,
                     onBorrowingClick = onBorrowingClick
                 )
             }
@@ -150,30 +180,34 @@ private fun BorrowingsSection(
 }
 
 @Composable
-private fun MembershipsSection(uiState: HomeUiState) {
+private fun SubscriptionsSection(
+    uiState: HomeUiState,
+    onSubscriptionClick: (String) -> Unit
+) {
     if (uiState is HomeUiState.Idle) return
 
-    val memberships = (uiState as? HomeUiState.Content)?.memberships.orEmpty()
+    val subscriptions = (uiState as? HomeUiState.Content)?.subscriptions.orEmpty()
 
-    SectionHeader(title = "Subscribed Memberships")
+    SectionHeader(title = "Your Memberships")
     Spacer(modifier = Modifier.height(12.dp))
 
     when {
         uiState is HomeUiState.Loading -> {
             EmptyCard(message = "Loading memberships...")
         }
-        memberships.isEmpty() -> {
+        subscriptions.isEmpty() -> {
             EmptyCard(message = "You do not have active memberships")
         }
         else -> {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                memberships.forEach { membership ->
-                    MembershipCard(membership = membership)
+                subscriptions.forEach { subscription ->
+                    SubscriptionCard(
+                        subscription = subscription,
+                        onSubscriptionClick = onSubscriptionClick
+                    )
                 }
             }
         }
@@ -458,9 +492,20 @@ private fun StatusBadge(
 }
 
 @Composable
-private fun MembershipCard(membership: Membership) {
+private fun SubscriptionCard(
+    subscription: Subscription,
+    onSubscriptionClick: (String) -> Unit
+) {
+    val expiryLabel = formatExpiry(subscription.expiresAt)
+    val status = subscription.statusLabel()
+    val statusColor = subscription.statusColor()
+    val statusBackground = statusColor.copy(alpha = 0.12f)
+    val context = LocalContext.current
+
     Box(
         modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onSubscriptionClick(subscription.id) }
             .clip(RoundedCornerShape(14.dp))
             .background(colorResource(id = R.color.surface_light))
             .border(
@@ -468,20 +513,97 @@ private fun MembershipCard(membership: Membership) {
                 color = colorResource(id = R.color.border),
                 shape = RoundedCornerShape(14.dp)
             )
-            .padding(horizontal = 14.dp, vertical = 10.dp)
+            .padding(horizontal = 14.dp, vertical = 12.dp)
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text(
-                text = membership.name,
-                fontSize = 13.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = colorResource(id = R.color.primary)
-            )
-            Text(
-                text = membership.tier.ifBlank { "Standard" },
-                fontSize = 11.sp,
-                color = colorResource(id = R.color.secondary)
-            )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(46.dp)
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(colorResource(id = R.color.border)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    val logoUrl = subscription.libraryLogoUrl
+                    if (!logoUrl.isNullOrBlank()) {
+                        val request = remember(logoUrl) {
+                            ImageRequest.Builder(context)
+                                .data(logoUrl)
+                                .memoryCachePolicy(CachePolicy.ENABLED)
+                                .diskCachePolicy(CachePolicy.ENABLED)
+                                .build()
+                        }
+                        SubcomposeAsyncImage(
+                            model = request,
+                            contentDescription = subscription.libraryName,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize(),
+                            loading = {
+                                CircularProgressIndicator(
+                                    color = colorResource(id = R.color.accent),
+                                    strokeWidth = 2.dp,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            },
+                            error = {
+                                Icon(
+                                    imageVector = Icons.Outlined.AccountBalance,
+                                    contentDescription = null,
+                                    tint = colorResource(id = R.color.tertiary)
+                                )
+                            }
+                        )
+                    } else {
+                        Icon(
+                            imageVector = Icons.Outlined.AccountBalance,
+                            contentDescription = null,
+                            tint = colorResource(id = R.color.tertiary)
+                        )
+                    }
+                }
+
+                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(
+                        text = subscription.membershipName.ifBlank { "Membership" },
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = colorResource(id = R.color.primary)
+                    )
+                    Text(
+                        text = subscription.libraryName?.ifBlank { "Library" } ?: "Library",
+                        fontSize = 12.sp,
+                        color = colorResource(id = R.color.secondary)
+                    )
+                }
+            }
+
+            Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(50))
+                        .background(statusBackground)
+                        .padding(horizontal = 10.dp, vertical = 4.dp)
+                ) {
+                    Text(
+                        text = status,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = statusColor
+                    )
+                }
+                Text(
+                    text = expiryLabel,
+                    fontSize = 12.sp,
+                    color = colorResource(id = R.color.secondary)
+                )
+            }
         }
     }
 }
@@ -589,27 +711,53 @@ private fun GreetingHeader() {
 }
 
 @Composable
-private fun SearchBar() {
-    Row(
+private fun SearchBar(
+    value: String,
+    onValueChange: (String) -> Unit,
+    onClear: () -> Unit
+) {
+    TextField(
+        value = value,
+        onValueChange = onValueChange,
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(20.dp))
-            .background(colorResource(id = R.color.surface_light))
-            .padding(horizontal = 16.dp, vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Icon(
-            imageVector = Icons.Outlined.Search,
-            contentDescription = "Search",
-            tint = colorResource(id = R.color.secondary)
+            .clip(RoundedCornerShape(20.dp)),
+        placeholder = {
+            Text(
+                text = "Search borrowed books...",
+                color = colorResource(id = R.color.secondary),
+                fontSize = 14.sp
+            )
+        },
+        leadingIcon = {
+            Icon(
+                imageVector = Icons.Outlined.Search,
+                contentDescription = "Search",
+                tint = colorResource(id = R.color.secondary)
+            )
+        },
+        trailingIcon = {
+            if (value.isNotBlank()) {
+                IconButton(onClick = onClear) {
+                    Icon(
+                        imageVector = Icons.Outlined.Close,
+                        contentDescription = "Clear search",
+                        tint = colorResource(id = R.color.secondary)
+                    )
+                }
+            }
+        },
+        singleLine = true,
+        shape = RoundedCornerShape(20.dp),
+        colors = TextFieldDefaults.colors(
+            focusedContainerColor = colorResource(id = R.color.surface_light),
+            unfocusedContainerColor = colorResource(id = R.color.surface_light),
+            disabledContainerColor = colorResource(id = R.color.surface_light),
+            focusedIndicatorColor = Color.Transparent,
+            unfocusedIndicatorColor = Color.Transparent,
+            disabledIndicatorColor = Color.Transparent
         )
-        Spacer(modifier = Modifier.width(8.dp))
-        Text(
-            text = "Search titles, authors, ISBN...",
-            color = colorResource(id = R.color.secondary),
-            fontSize = 14.sp
-        )
-    }
+    )
 }
 
 @Composable
@@ -647,8 +795,8 @@ private fun BottomNavigationBar(
 ) {
     val items = listOf(
         BottomNavItem("Home", Icons.Outlined.Home),
-        BottomNavItem("Subscriptions", Icons.Outlined.Subscriptions),
-        BottomNavItem("Libraries", Icons.Outlined.MenuBook),
+        BottomNavItem("Books", Icons.Outlined.MenuBook),
+        BottomNavItem("Libraries", Icons.Outlined.LocationOn),
         BottomNavItem("Settings", Icons.Outlined.Settings)
     )
 
@@ -764,6 +912,15 @@ private fun Borrowing.isOverdue(): Boolean {
     return dueDate.before(java.util.Date())
 }
 
+private fun Borrowing.matchesQuery(query: String): Boolean {
+    if (query.isBlank()) return true
+    val needle = query.lowercase(Locale.US)
+    val title = book.title.lowercase(Locale.US)
+    val author = book.author.lowercase(Locale.US)
+    val code = book.code?.lowercase(Locale.US).orEmpty()
+    return title.contains(needle) || author.contains(needle) || code.contains(needle)
+}
+
 private fun parseDate(value: String?): java.util.Date? {
     if (value.isNullOrBlank()) return null
 
@@ -774,6 +931,30 @@ private fun parseDate(value: String?): java.util.Date? {
 
     return runCatching { utcParser.parse(value) }.getOrNull()
         ?: runCatching { dateOnlyParser.parse(value) }.getOrNull()
+}
+
+private fun Subscription.statusLabel(): String {
+    val now = java.util.Date()
+    val expiry = parseDate(expiresAt) ?: return "Active"
+    if (expiry.before(now)) return "Expired"
+
+    val millisLeft = expiry.time - now.time
+    val daysLeft = millisLeft / (1000L * 60L * 60L * 24L)
+    return if (daysLeft <= 30) "Expiring" else "Active"
+}
+
+private fun Subscription.statusColor(): Color {
+    return when (statusLabel().lowercase(Locale.US)) {
+        "expired" -> Color(0xFFE53935)
+        "expiring" -> Color(0xFFF57C00)
+        else -> Color(0xFF2E7D32)
+    }
+}
+
+private fun formatExpiry(value: String?): String {
+    val date = parseDate(value) ?: return "Until --"
+    val output = SimpleDateFormat("MMM yyyy", Locale.US)
+    return "Until ${output.format(date)}"
 }
 
 private data class BottomNavItem(
@@ -828,13 +1009,21 @@ private fun HomeScreenPreview() {
                     returning = null
                 )
             ),
-            memberships = listOf(
-                Membership(
-                    id = "m1",
-                    name = "Contemporary Romance Library",
-                    tier = "Premium",
-                    status = "active",
-                    expiresAt = "2026-06-01"
+            subscriptions = listOf(
+                Subscription(
+                    id = "s1",
+                    userId = "u1",
+                    membershipId = "m1",
+                    libraryId = "l1",
+                    libraryLogoUrl = null,
+                    createdAt = "2026-01-01",
+                    expiresAt = "2026-06-01",
+                    amount = 3000,
+                    finePerDay = 100,
+                    loanPeriod = 14,
+                    activeLoanLimit = 3,
+                    membershipName = "Contemporary Romance Library",
+                    libraryName = "CRL"
                 )
             )
         )

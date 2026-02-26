@@ -14,6 +14,8 @@ import com.example.feature.home.presentation.home.HomeScreen
 import com.example.feature.home.presentation.home.HomeViewModel
 import com.example.feature.home.presentation.borrowingdetail.BorrowingDetailScreen
 import com.example.feature.home.presentation.borrowingdetail.BorrowingDetailViewModel
+import com.example.feature.home.presentation.subscriptiondetail.SubscriptionDetailScreen
+import com.example.feature.home.presentation.subscriptiondetail.SubscriptionDetailViewModel
 import com.example.feature.auth.presentation.signin.SignInScreen
 import com.example.feature.auth.presentation.signin.SignInViewModel
 import com.example.feature.auth.presentation.signup.SignUpScreen
@@ -29,6 +31,9 @@ sealed class Screen(val route: String) {
     data object Home : Screen("home")
     data object BorrowingDetail : Screen("borrowing/{borrowingId}") {
         fun routeForId(borrowingId: String): String = "borrowing/$borrowingId"
+    }
+    data object SubscriptionDetail : Screen("subscription/{subscriptionId}") {
+        fun routeForId(subscriptionId: String): String = "subscription/$subscriptionId"
     }
 }
 
@@ -135,6 +140,9 @@ fun AuthNavGraph(
                 onBorrowingClick = { borrowingId ->
                     navController.navigate(Screen.BorrowingDetail.routeForId(borrowingId))
                 },
+                onSubscriptionClick = { subscriptionId ->
+                    navController.navigate(Screen.SubscriptionDetail.routeForId(subscriptionId))
+                },
                 onSignOutClick = {
                     navController.navigate(Screen.SignIn.route) {
                         popUpTo(Screen.Home.route) { inclusive = true }
@@ -161,6 +169,27 @@ fun AuthNavGraph(
                 uiState = detailUiState,
                 onBackClick = { navController.popBackStack() },
                 onRetryClick = { detailViewModel.loadBorrowing(borrowingId) }
+            )
+        }
+
+        composable(
+            route = Screen.SubscriptionDetail.route,
+            arguments = listOf(
+                navArgument("subscriptionId") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val subscriptionId = backStackEntry.arguments?.getString("subscriptionId").orEmpty()
+            val detailViewModel: SubscriptionDetailViewModel = koinViewModel()
+            val detailUiState by detailViewModel.uiState.collectAsState()
+
+            LaunchedEffect(subscriptionId) {
+                detailViewModel.loadSubscription(subscriptionId)
+            }
+
+            SubscriptionDetailScreen(
+                uiState = detailUiState,
+                onBackClick = { navController.popBackStack() },
+                onRetryClick = { detailViewModel.loadSubscription(subscriptionId) }
             )
         }
     }
