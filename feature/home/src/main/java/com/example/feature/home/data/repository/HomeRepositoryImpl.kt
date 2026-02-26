@@ -5,7 +5,7 @@ import android.util.Log
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.example.core.storage.authPrefsDataStore
-import com.example.feature.home.data.model.bood_model.BookDetailDto
+import com.example.core.model.book.BookDetailDto
 import com.example.feature.home.data.model.borrowing_model.BorrowingDto
 import com.example.feature.home.data.model.library_model.LibraryDetailDto
 import com.example.feature.home.data.model.subscription_model.SubscriptionDto
@@ -13,10 +13,10 @@ import com.example.feature.home.data.model.toDomain
 import com.example.feature.home.data.model.toLibraryDetailDto
 import com.example.feature.home.data.model.toDto
 import com.example.feature.home.data.remote.HomeApiService
-import com.example.feature.home.domain.model.BookDetail
+import com.example.core.model.book.BookDetail
+import com.example.core.model.book.LibraryInfo
 import com.example.feature.home.domain.model.Borrowing
 import com.example.feature.home.domain.model.HomeResult
-import com.example.feature.home.domain.model.LibraryInfo
 import com.example.feature.home.domain.model.Subscription
 import com.example.feature.home.domain.repository.HomeRepository
 import com.google.firebase.auth.FirebaseAuth

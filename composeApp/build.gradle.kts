@@ -26,6 +26,7 @@ kotlin {
             implementation(project(":core"))
             implementation(project(":feature:auth"))
             implementation(project(":feature:home"))
+            implementation(libs.androidx.navigation.compose)
             
             // Koin for DI
             implementation("io.insert-koin:koin-android:3.5.3")

@@ -3,7 +3,7 @@ package com.example.feature.home.presentation.subscriptiondetail
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.feature.home.domain.model.LibraryInfo
+import com.example.core.model.book.LibraryInfo
 import com.example.feature.home.domain.model.Subscription
 import com.example.feature.home.domain.model.HomeResult
 import com.example.feature.home.domain.usecase.GetCachedLibraryDetailUseCase

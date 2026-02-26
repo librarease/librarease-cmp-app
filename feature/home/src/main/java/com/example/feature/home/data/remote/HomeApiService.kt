@@ -1,8 +1,8 @@
 package com.example.feature.home.data.remote
 
 import com.example.core.network.ApiConfig
-import com.example.feature.home.data.model.bood_model.BookDetailDto
-import com.example.feature.home.data.model.bood_model.BookDetailResponse
+import com.example.core.model.book.BookDetailDto
+import com.example.core.model.book.BookDetailResponse
 import com.example.feature.home.data.model.borrowing_model.BorrowingDto
 import com.example.feature.home.data.model.borrowing_model.BorrowingsResponse
 import com.example.feature.home.data.model.library_model.LibraryDetailDto

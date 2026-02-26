@@ -1,9 +1,9 @@
 package com.example.feature.home.domain.repository
 
 import com.example.feature.home.domain.model.Borrowing
-import com.example.feature.home.domain.model.BookDetail
+import com.example.core.model.book.BookDetail
+import com.example.core.model.book.LibraryInfo
 import com.example.feature.home.domain.model.HomeResult
-import com.example.feature.home.domain.model.LibraryInfo
 import com.example.feature.home.domain.model.Subscription
 
 interface HomeRepository {

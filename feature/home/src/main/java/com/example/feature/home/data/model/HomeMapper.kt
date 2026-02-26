@@ -1,34 +1,35 @@
 package com.example.feature.home.data.model
 
-import com.example.feature.home.data.model.bood_model.BookColorsDto
-import com.example.feature.home.data.model.bood_model.BookDetailDto
-import com.example.feature.home.data.model.bood_model.BookDto
-import com.example.feature.home.data.model.bood_model.BookStatsDto
-import com.example.feature.home.data.model.bood_model.HslColorDto
-import com.example.feature.home.data.model.bood_model.LibraryDto
+import com.example.core.model.book.BookColorsDto
+import com.example.core.model.book.BookDetail
+import com.example.core.model.book.BookDetailDto
+import com.example.core.model.book.BookDto
+import com.example.core.model.book.BookPalette
+import com.example.core.model.book.BookStats
+import com.example.core.model.book.BookStatsDto
+import com.example.core.model.book.BookSummary
+import com.example.core.model.book.HslColor
+import com.example.core.model.book.HslColorDto
+import com.example.core.model.book.LibraryDto
+import com.example.core.model.book.LibraryInfo
 import com.example.feature.home.data.model.borrowing_model.BorrowingDto
 import com.example.feature.home.data.model.borrowing_model.ReturningDto
 import com.example.feature.home.data.model.library_model.LibraryDetailDto
 import com.example.feature.home.data.model.subscription_model.SubscriptionDto
 import com.example.feature.home.domain.model.Borrowing
-import com.example.feature.home.domain.model.BookDetail
-import com.example.feature.home.domain.model.BookPalette
-import com.example.feature.home.domain.model.BookStats
-import com.example.feature.home.domain.model.BorrowedBook
-import com.example.feature.home.domain.model.HslColor
-import com.example.feature.home.domain.model.LibraryInfo
 import com.example.feature.home.domain.model.Returning
 import com.example.feature.home.domain.model.Subscription
 
 fun BorrowingDto.toDomain(): Borrowing {
-    val mappedBook = book?.toDomain() ?: BorrowedBook(
+    val mappedBook = book?.toDomain() ?: BookSummary(
         id = bookId.orEmpty(),
         title = "",
         author = "",
         year = null,
         code = null,
         coverUrl = null,
-        colors = null
+        colors = null,
+        libraryId = null
     )
 
     return Borrowing(
@@ -45,15 +46,16 @@ fun BorrowingDto.toDomain(): Borrowing {
     )
 }
 
-fun BookDto.toDomain(): BorrowedBook {
-    return BorrowedBook(
+fun BookDto.toDomain(): BookSummary {
+    return BookSummary(
         id = id,
         title = title,
         author = author.orEmpty(),
         year = year,
         code = code,
         coverUrl = coverUrl,
-        colors = colors?.toDomain()
+        colors = colors?.toDomain(),
+        libraryId = libraryId
     )
 }
 

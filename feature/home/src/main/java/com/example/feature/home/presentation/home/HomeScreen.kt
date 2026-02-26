@@ -63,10 +63,10 @@ import coil3.imageLoader
 import coil3.request.CachePolicy
 import coil3.request.ImageRequest
 import com.example.core.R
-import com.example.feature.home.domain.model.BorrowedBook
 import com.example.feature.home.domain.model.Borrowing
-import com.example.feature.home.domain.model.HslColor
 import com.example.feature.home.domain.model.Subscription
+import com.example.core.model.book.BookSummary
+import com.example.core.model.book.HslColor
 import java.text.SimpleDateFormat
 import java.util.Locale
 import java.util.TimeZone
@@ -854,7 +854,7 @@ private fun BottomNavigationBar(
     }
 }
 
-private fun BorrowedBook.primaryColor(): Color {
+private fun BookSummary.primaryColor(): Color {
     val tone = colors?.vibrant
         ?: colors?.muted
         ?: colors?.darkVibrant
@@ -865,7 +865,7 @@ private fun BorrowedBook.primaryColor(): Color {
     return tone?.toComposeColor() ?: Color(0xFF8A84A6)
 }
 
-private fun BorrowedBook.secondaryColor(primary: Color): Color {
+private fun BookSummary.secondaryColor(primary: Color): Color {
     val tone = colors?.darkMuted ?: colors?.muted ?: colors?.darkVibrant
     return tone?.toComposeColor()?.copy(alpha = 0.85f) ?: primary.copy(alpha = 0.75f)
 }
@@ -962,70 +962,3 @@ private data class BottomNavItem(
     val icon: androidx.compose.ui.graphics.vector.ImageVector
 )
 
-@Preview(showBackground = true, showSystemUi = true)
-@Composable
-private fun HomeScreenPreview() {
-    HomeScreen(
-        uiState = HomeUiState.Content(
-            borrowings = listOf(
-                Borrowing(
-                    id = "1",
-                    book = BorrowedBook(
-                        id = "book-1",
-                        title = "The Art of Solitude",
-                        author = "Stephen Batchelor",
-                        year = 2024,
-                        code = "BK-101",
-                        coverUrl = null,
-                        colors = null
-                    ),
-                    bookId = "book-1",
-                    borrowedAt = "2026-02-10T12:00:00Z",
-                    createdAt = "2026-02-10T12:00:00Z",
-                    dueAt = "2026-03-01T12:00:00Z",
-                    updatedAt = "2026-02-10T12:00:00Z",
-                    staffId = "staff-1",
-                    subscriptionId = "sub-1",
-                    returning = null
-                ),
-                Borrowing(
-                    id = "2",
-                    book = BorrowedBook(
-                        id = "book-2",
-                        title = "Sapiens",
-                        author = "Yuval Noah Harari",
-                        year = 2011,
-                        code = "BK-102",
-                        coverUrl = null,
-                        colors = null
-                    ),
-                    bookId = "book-2",
-                    borrowedAt = "2026-02-10T12:00:00Z",
-                    createdAt = "2026-02-10T12:00:00Z",
-                    dueAt = "2026-02-15T12:00:00Z",
-                    updatedAt = "2026-02-10T12:00:00Z",
-                    staffId = "staff-1",
-                    subscriptionId = "sub-1",
-                    returning = null
-                )
-            ),
-            subscriptions = listOf(
-                Subscription(
-                    id = "s1",
-                    userId = "u1",
-                    membershipId = "m1",
-                    libraryId = "l1",
-                    libraryLogoUrl = null,
-                    createdAt = "2026-01-01",
-                    expiresAt = "2026-06-01",
-                    amount = 3000,
-                    finePerDay = 100,
-                    loanPeriod = 14,
-                    activeLoanLimit = 3,
-                    membershipName = "Contemporary Romance Library",
-                    libraryName = "CRL"
-                )
-            )
-        )
-    )
-}

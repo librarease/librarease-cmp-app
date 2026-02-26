@@ -3,7 +3,7 @@ package com.example.feature.home.presentation.borrowingdetail
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.feature.home.domain.model.BookDetail
+import com.example.core.model.book.BookDetail
 import com.example.feature.home.domain.model.Borrowing
 import com.example.feature.home.domain.model.HomeResult
 import com.example.feature.home.domain.usecase.GetCachedBookDetailUseCase

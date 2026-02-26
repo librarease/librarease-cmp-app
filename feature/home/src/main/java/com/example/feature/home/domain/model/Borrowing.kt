@@ -1,8 +1,10 @@
 package com.example.feature.home.domain.model
 
+import com.example.core.model.book.BookSummary
+
 data class Borrowing(
     val id: String,
-    val book: BorrowedBook,
+    val book: BookSummary,
     val bookId: String,
     val borrowedAt: String?,
     val createdAt: String?,

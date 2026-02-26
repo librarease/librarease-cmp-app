@@ -49,11 +49,11 @@ import coil3.compose.SubcomposeAsyncImage
 import coil3.request.CachePolicy
 import coil3.request.ImageRequest
 import com.example.core.R
-import com.example.feature.home.domain.model.BookDetail
-import com.example.feature.home.domain.model.BookPalette
+import com.example.core.model.book.BookDetail
+import com.example.core.model.book.BookPalette
+import com.example.core.model.book.HslColor
+import com.example.core.model.book.LibraryInfo
 import com.example.feature.home.domain.model.Borrowing
-import com.example.feature.home.domain.model.HslColor
-import com.example.feature.home.domain.model.LibraryInfo
 import java.text.SimpleDateFormat
 import java.util.Locale
 import java.util.TimeZone

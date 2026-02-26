@@ -48,7 +48,7 @@ import coil3.compose.SubcomposeAsyncImage
 import coil3.request.CachePolicy
 import coil3.request.ImageRequest
 import com.example.core.R
-import com.example.feature.home.domain.model.LibraryInfo
+import com.example.core.model.book.LibraryInfo
 import com.example.feature.home.domain.model.Subscription
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.qrcode.QRCodeWriter
