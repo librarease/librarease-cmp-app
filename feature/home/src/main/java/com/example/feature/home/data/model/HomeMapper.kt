@@ -29,7 +29,8 @@ fun BorrowingDto.toDomain(): Borrowing {
         code = null,
         coverUrl = null,
         colors = null,
-        libraryId = null
+        libraryId = null,
+        available = null
     )
 
     return Borrowing(
@@ -55,7 +56,8 @@ fun BookDto.toDomain(): BookSummary {
         code = code,
         coverUrl = coverUrl,
         colors = colors?.toDomain(),
-        libraryId = libraryId
+        libraryId = libraryId,
+        available = available
     )
 }
 
@@ -69,6 +71,7 @@ fun BookDetailDto.toDomain(): BookDetail {
         coverUrl = coverUrl,
         colors = colors?.toDomain(),
         libraryId = libraryId,
+        available = available,
         description = description,
         stats = stats?.toDomain(),
         library = library?.toDomain()
@@ -85,6 +88,7 @@ fun BookDetail.toDto(): BookDetailDto {
         coverUrl = coverUrl,
         colors = colors?.toDto(),
         libraryId = libraryId,
+        available = available,
         description = description,
         createdAt = null,
         updatedAt = null,

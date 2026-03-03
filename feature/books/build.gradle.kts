@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.androidLibrary)
     alias(libs.plugins.kotlinAndroid)
+    alias(libs.plugins.composeCompiler)
     kotlin("plugin.serialization") version "2.3.0"
 }
 
@@ -36,6 +37,9 @@ android {
             jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
         }
     }
+    buildFeatures {
+        compose = true
+    }
 }
 
 dependencies {
@@ -44,6 +48,25 @@ dependencies {
     implementation(libs.material)
 
     implementation(project(":core"))
+
+    implementation(platform(libs.androidx.compose.bom))
+    implementation(libs.androidx.compose.ui)
+    implementation(libs.androidx.compose.ui.graphics)
+    implementation(libs.androidx.compose.ui.tooling.preview)
+    implementation(libs.androidx.compose.material3)
+    implementation("androidx.compose.material:material-icons-extended")
+    implementation(libs.androidx.activity.compose.v193)
+    implementation(libs.androidx.lifecycle.runtime.compose)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.auth.ktx)
+    implementation(libs.kotlinx.coroutines.play.services)
+    implementation("io.coil-kt.coil3:coil:3.0.4")
+    implementation("io.coil-kt.coil3:coil-compose:3.0.4")
+    implementation("io.coil-kt.coil3:coil-network-ktor3:3.0.4")
+
+    debugImplementation(libs.androidx.compose.ui.tooling)
+    debugImplementation(libs.androidx.compose.ui.test.manifest)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.testExt.junit)

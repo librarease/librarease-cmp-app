@@ -24,11 +24,18 @@ class BooksApiService(
 
     suspend fun getBooks(
         limit: Int,
+        skip: Int = 0,
+        page: Int? = null,
         authToken: String? = null
     ): List<BookDto> {
         val response = httpClient.get("${ApiConfig.BASE_URL}books") {
             url {
                 parameters.append("limit", limit.toString())
+                if (page != null) {
+                    parameters.append("page", page.toString())
+                } else if (skip > 0) {
+                    parameters.append("skip", skip.toString())
+                }
             }
             if (!authToken.isNullOrBlank()) {
                 header(HttpHeaders.Authorization, "Bearer $authToken")

@@ -27,5 +27,8 @@ data class BookDto(
     val colors: BookColorsDto? = null,
     @SerialName("library_id")
     @JsonNames("libraryId")
-    val libraryId: String? = null
+    val libraryId: String? = null,
+    @SerialName("available")
+    @JsonNames("is_available", "isAvailable", "availability")
+    val available: Boolean? = null
 )

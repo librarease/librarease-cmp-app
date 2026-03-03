@@ -3,6 +3,7 @@ package com.example.librarease
 import android.app.Application
 import com.example.core.di.coreModule
 import com.example.feature.auth.di.authModule
+import com.example.feature.books.di.booksModule
 import com.example.feature.home.di.homeModule
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
@@ -19,7 +20,8 @@ class LibrareaseApplication : Application() {
             modules(
                 coreModule,
                 authModule,
-                homeModule
+                homeModule,
+                booksModule
             )
         }
     }

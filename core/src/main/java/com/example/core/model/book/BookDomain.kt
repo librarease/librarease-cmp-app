@@ -8,7 +8,8 @@ data class BookSummary(
     val code: String?,
     val coverUrl: String?,
     val colors: BookPalette?,
-    val libraryId: String?
+    val libraryId: String?,
+    val available: Boolean?
 )
 
 data class BookDetail(
@@ -20,6 +21,7 @@ data class BookDetail(
     val coverUrl: String?,
     val colors: BookPalette?,
     val libraryId: String?,
+    val available: Boolean?,
     val description: String?,
     val stats: BookStats?,
     val library: LibraryInfo?

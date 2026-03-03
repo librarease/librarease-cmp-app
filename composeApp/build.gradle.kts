@@ -23,9 +23,11 @@ kotlin {
         androidMain.dependencies {
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.androidx.activity.compose)
+            implementation(libs.androidx.appcompat)
             implementation(project(":core"))
             implementation(project(":feature:auth"))
             implementation(project(":feature:home"))
+            implementation(project(":feature:books"))
             implementation(libs.androidx.navigation.compose)
             
             // Koin for DI

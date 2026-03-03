@@ -15,6 +15,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -22,24 +24,21 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AccountBalance
 import androidx.compose.material.icons.outlined.DateRange
-import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Close
-import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material.icons.outlined.MenuBook
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.Search
-import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Subscriptions
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -78,14 +77,14 @@ fun HomeScreen(
     onRefresh: (String?) -> Unit = {},
     onBorrowingClick: (String) -> Unit = {},
     onSubscriptionClick: (String) -> Unit = {},
-    onSignOutClick: () -> Unit = {}
+    onSignOutClick: () -> Unit = {},
+    modifier: Modifier = Modifier
 ) {
     val scrollState = rememberScrollState()
-    var selectedNavIndex by remember { mutableIntStateOf(0) }
     var searchQuery by rememberSaveable { mutableStateOf("") }
 
     Box(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxSize()
             .background(colorResource(id = R.color.background))
             .padding(top = 24.dp)
@@ -95,9 +94,20 @@ fun HomeScreen(
                 .fillMaxSize()
                 .verticalScroll(scrollState)
                 .padding(horizontal = 20.dp)
-                .padding(top = 28.dp, bottom = 110.dp)
+                .padding(top = 28.dp, bottom = 24.dp)
         ) {
             GreetingHeader()
+
+            if (uiState is HomeUiState.Loading) {
+                Spacer(modifier = Modifier.height(12.dp))
+                LinearProgressIndicator(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(999.dp)),
+                    color = colorResource(id = R.color.accent),
+                    trackColor = colorResource(id = R.color.surface_light)
+                )
+            }
 
             Spacer(modifier = Modifier.height(16.dp))
             SearchBar(
@@ -120,15 +130,6 @@ fun HomeScreen(
                 onSubscriptionClick = onSubscriptionClick
             )
         }
-
-        BottomNavigationBar(
-            selectedIndex = selectedNavIndex,
-            onSelected = { selectedNavIndex = it },
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .fillMaxWidth()
-                .padding(bottom = 12.dp)
-        )
     }
 }
 
@@ -142,6 +143,7 @@ private fun BorrowingsSection(
     if (uiState is HomeUiState.Idle) return
 
     val borrowings = (uiState as? HomeUiState.Content)?.borrowings.orEmpty()
+        .filter { it.returning == null }
     val trimmedQuery = searchQuery.trim()
     val filteredBorrowings = if (trimmedQuery.isBlank()) {
         borrowings
@@ -517,10 +519,11 @@ private fun SubscriptionCard(
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Row(
+                modifier = Modifier.weight(1f),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
@@ -569,22 +572,33 @@ private fun SubscriptionCard(
                     }
                 }
 
-                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
                     Text(
                         text = subscription.membershipName.ifBlank { "Membership" },
                         fontSize = 15.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = colorResource(id = R.color.primary)
+                        color = colorResource(id = R.color.primary),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                     Text(
                         text = subscription.libraryName?.ifBlank { "Library" } ?: "Library",
                         fontSize = 12.sp,
-                        color = colorResource(id = R.color.secondary)
+                        color = colorResource(id = R.color.secondary),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
             }
 
-            Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Column(
+                modifier = Modifier.widthIn(min = 92.dp),
+                horizontalAlignment = Alignment.End,
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(50))
@@ -594,14 +608,19 @@ private fun SubscriptionCard(
                     Text(
                         text = status,
                         fontSize = 11.sp,
+                        modifier = Modifier.wrapContentWidth(align = Alignment.CenterHorizontally),
                         fontWeight = FontWeight.SemiBold,
-                        color = statusColor
+                        color = statusColor,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
                 Text(
                     text = expiryLabel,
                     fontSize = 12.sp,
-                    color = colorResource(id = R.color.secondary)
+                    color = colorResource(id = R.color.secondary),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
         }
@@ -788,72 +807,6 @@ private fun SectionHeader(
 }
 
 @Composable
-private fun BottomNavigationBar(
-    selectedIndex: Int,
-    onSelected: (Int) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val items = listOf(
-        BottomNavItem("Home", Icons.Outlined.Home),
-        BottomNavItem("Books", Icons.Outlined.MenuBook),
-        BottomNavItem("Libraries", Icons.Outlined.LocationOn),
-        BottomNavItem("Settings", Icons.Outlined.Settings)
-    )
-
-    val glassColor = colorResource(id = R.color.surface_light).copy(alpha = 0.78f)
-    val glassBorder = colorResource(id = R.color.border).copy(alpha = 0.7f)
-
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(topStart = 22.dp, topEnd = 22.dp))
-            .background(glassColor)
-            .border(
-                width = 1.dp,
-                color = glassBorder,
-                shape = RoundedCornerShape(topStart = 22.dp, topEnd = 22.dp)
-            )
-            .padding(vertical = 14.dp)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceAround,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            items.forEachIndexed { index, item ->
-                val isSelected = index == selectedIndex
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(14.dp))
-                        .clickable { onSelected(index) }
-                        .padding(horizontal = 6.dp)
-                ) {
-                    Icon(
-                        imageVector = item.icon,
-                        contentDescription = item.label,
-                        tint = if (isSelected) {
-                            colorResource(R.color.accent)
-                        } else {
-                            colorResource(id = R.color.secondary)
-                        }
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = item.label,
-                        fontSize = 10.sp,
-                        color = if (isSelected) {
-                            colorResource(id = R.color.accent)
-                        } else {
-                            colorResource(id = R.color.secondary)
-                        }
-                    )
-                }
-            }
-        }
-    }
-}
-
 private fun BookSummary.primaryColor(): Color {
     val tone = colors?.vibrant
         ?: colors?.muted
@@ -956,9 +909,3 @@ private fun formatExpiry(value: String?): String {
     val output = SimpleDateFormat("MMM yyyy", Locale.US)
     return "Until ${output.format(date)}"
 }
-
-private data class BottomNavItem(
-    val label: String,
-    val icon: androidx.compose.ui.graphics.vector.ImageVector
-)
-

@@ -18,8 +18,6 @@ import com.example.feature.auth.presentation.splash.SplashScreen
 import com.example.feature.auth.presentation.splash.SplashViewModel
 import com.example.feature.home.presentation.borrowingdetail.BorrowingDetailScreen
 import com.example.feature.home.presentation.borrowingdetail.BorrowingDetailViewModel
-import com.example.feature.home.presentation.home.HomeScreen
-import com.example.feature.home.presentation.home.HomeViewModel
 import com.example.feature.home.presentation.subscriptiondetail.SubscriptionDetailScreen
 import com.example.feature.home.presentation.subscriptiondetail.SubscriptionDetailViewModel
 import org.koin.androidx.compose.koinViewModel
@@ -125,18 +123,7 @@ fun AppNavGraph(
         }
 
         composable(AppScreen.Home.route) {
-            val homeViewModel: HomeViewModel = koinViewModel()
-            val homeUiState by homeViewModel.uiState.collectAsState()
-
-            LaunchedEffect(Unit) {
-                homeViewModel.loadHome()
-            }
-
-            HomeScreen(
-                uiState = homeUiState,
-                onRefresh = { userId ->
-                    homeViewModel.refresh(userId)
-                },
+            MainTabsScreen(
                 onBorrowingClick = { borrowingId ->
                     navController.navigate(AppScreen.BorrowingDetail.routeForId(borrowingId))
                 },
@@ -192,5 +179,6 @@ fun AppNavGraph(
                 onRetryClick = { detailViewModel.loadSubscription(subscriptionId) }
             )
         }
+
     }
 }

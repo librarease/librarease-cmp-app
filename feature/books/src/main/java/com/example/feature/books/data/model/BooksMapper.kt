@@ -22,7 +22,8 @@ fun BookDto.toDomain(): BookSummary {
         code = code,
         coverUrl = coverUrl,
         colors = colors?.toDomain(),
-        libraryId = libraryId
+        libraryId = libraryId,
+        available = available
     )
 }
 
@@ -36,9 +37,24 @@ fun BookDetailDto.toDomain(): BookDetail {
         coverUrl = coverUrl,
         colors = colors?.toDomain(),
         libraryId = libraryId,
+        available = available,
         description = description,
         stats = stats?.toDomain(),
         library = library?.toDomain()
+    )
+}
+
+fun BookSummary.toDto(): BookDto {
+    return BookDto(
+        id = id,
+        title = title,
+        author = author,
+        year = year,
+        code = code,
+        coverUrl = coverUrl,
+        colors = colors?.toDto(),
+        libraryId = libraryId,
+        available = available
     )
 }
 
@@ -50,6 +66,17 @@ private fun BookColorsDto.toDomain(): BookPalette {
         lightMuted = lightMuted?.toDomain(),
         darkVibrant = darkVibrant?.toDomain(),
         lightVibrant = lightVibrant?.toDomain()
+    )
+}
+
+private fun BookPalette.toDto(): BookColorsDto {
+    return BookColorsDto(
+        muted = muted?.toDto(),
+        vibrant = vibrant?.toDto(),
+        darkMuted = darkMuted?.toDto(),
+        lightMuted = lightMuted?.toDto(),
+        darkVibrant = darkVibrant?.toDto(),
+        lightVibrant = lightVibrant?.toDto()
     )
 }
 
@@ -78,5 +105,14 @@ private fun HslColorDto.toDomain(): HslColor? {
         h = hue,
         s = saturation,
         l = lightness
+    )
+}
+
+private fun HslColor.toDto(): HslColorDto {
+    return HslColorDto(
+        h = h,
+        s = s,
+        l = l,
+        space = "hsl"
     )
 }

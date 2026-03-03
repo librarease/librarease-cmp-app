@@ -34,6 +34,9 @@ data class BookDetailDto(
     @SerialName("library_id")
     @JsonNames("libraryId")
     val libraryId: String? = null,
+    @SerialName("available")
+    @JsonNames("is_available", "isAvailable", "availability")
+    val available: Boolean? = null,
     val description: String? = null,
     @SerialName("created_at")
     @JsonNames("createdAt")
