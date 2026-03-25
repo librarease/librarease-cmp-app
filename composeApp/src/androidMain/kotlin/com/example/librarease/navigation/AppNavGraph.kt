@@ -4,18 +4,21 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.activity.compose.BackHandler
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import androidx.compose.ui.platform.LocalContext
+import android.app.Activity
 import com.example.feature.auth.presentation.signin.SignInScreen
 import com.example.feature.auth.presentation.signin.SignInViewModel
 import com.example.feature.auth.presentation.signup.SignUpScreen
 import com.example.feature.auth.presentation.signup.SignUpViewModel
 import com.example.feature.auth.presentation.splash.SplashScreen
-import com.example.feature.auth.presentation.splash.SplashViewModel
 import com.example.feature.home.presentation.borrowingdetail.BorrowingDetailScreen
 import com.example.feature.home.presentation.borrowingdetail.BorrowingDetailViewModel
 import com.example.feature.home.presentation.subscriptiondetail.SubscriptionDetailScreen
@@ -40,26 +43,41 @@ fun AppNavGraph(
     navController: NavHostController = rememberNavController(),
     startDestination: String = AppScreen.Splash.route
 ) {
+    val context = LocalContext.current
+    val backStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = backStackEntry?.destination?.route
+
     NavHost(
         navController = navController,
         startDestination = startDestination
     ) {
         composable(AppScreen.Splash.route) {
-            val viewModel: SplashViewModel = koinViewModel()
+            val appStartViewModel: AppStartViewModel = koinViewModel()
+            val destination by appStartViewModel.destination.collectAsState()
 
-            SplashScreen(
-                viewModel = viewModel,
-                onNavigateToAuth = {
-                    navController.navigate(AppScreen.SignIn.route) {
-                        popUpTo(AppScreen.Splash.route) { inclusive = true }
+            LaunchedEffect(Unit) {
+                appStartViewModel.start()
+            }
+
+            LaunchedEffect(destination) {
+                when (destination) {
+                    StartDestination.AUTH -> {
+                        navController.navigate(AppScreen.SignIn.route) {
+                            popUpTo(AppScreen.Splash.route) { inclusive = true }
+                        }
+                        appStartViewModel.consumeDestination()
                     }
-                },
-                onNavigateToHome = {
-                    navController.navigate(AppScreen.Home.route) {
-                        popUpTo(AppScreen.Splash.route) { inclusive = true }
+                    StartDestination.HOME -> {
+                        navController.navigate(AppScreen.Home.route) {
+                            popUpTo(AppScreen.Splash.route) { inclusive = true }
+                        }
+                        appStartViewModel.consumeDestination()
                     }
+                    null -> Unit
                 }
-            )
+            }
+
+            SplashScreen()
         }
 
         composable(AppScreen.SignIn.route) {
@@ -154,7 +172,7 @@ fun AppNavGraph(
 
             BorrowingDetailScreen(
                 uiState = detailUiState,
-                onBackClick = { navController.popBackStack() },
+                onBackClick = { navController.popBackStack(AppScreen.Home.route, false) },
                 onRetryClick = { detailViewModel.loadBorrowing(borrowingId) }
             )
         }
@@ -175,10 +193,14 @@ fun AppNavGraph(
 
             SubscriptionDetailScreen(
                 uiState = detailUiState,
-                onBackClick = { navController.popBackStack() },
+                onBackClick = { navController.popBackStack(AppScreen.Home.route, false) },
                 onRetryClick = { detailViewModel.loadSubscription(subscriptionId) }
             )
         }
 
+    }
+
+    BackHandler(enabled = currentRoute == AppScreen.Home.route) {
+        (context as? Activity)?.finish()
     }
 }

@@ -10,13 +10,14 @@ import com.example.feature.auth.domain.usecase.SignOutUseCase
 import com.example.feature.auth.domain.usecase.SignUpUseCase
 import com.example.feature.auth.presentation.signin.SignInViewModel
 import com.example.feature.auth.presentation.signup.SignUpViewModel
-import com.example.feature.auth.presentation.splash.SplashViewModel
 import com.google.firebase.auth.FirebaseAuth
 import org.koin.android.ext.koin.androidContext
 import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.dsl.module
 
 val authModule = module {
+
+    //The di is used with koin as it is more friendly with kmp
     
     single { AuthApiService(get()) }
 
@@ -36,7 +37,6 @@ val authModule = module {
     factory { GetCurrentUserUseCase(get()) }
     factory { IsUserLoggedInUseCase(get()) }
     
-    viewModel { SplashViewModel(get()) }
     viewModel { SignInViewModel(get()) }
     viewModel { SignUpViewModel(get()) }
 }

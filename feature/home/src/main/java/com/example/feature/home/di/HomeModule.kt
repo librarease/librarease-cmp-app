@@ -12,6 +12,7 @@ import com.example.feature.home.domain.usecase.GetBookDetailUseCase
 import com.example.feature.home.domain.usecase.GetLibraryDetailUseCase
 import com.example.feature.home.domain.usecase.GetSubscriptionByIdUseCase
 import com.example.feature.home.domain.usecase.GetSubscriptionsUseCase
+import com.example.feature.home.domain.usecase.WarmUpHomeUseCase
 import com.example.feature.home.presentation.borrowingdetail.BorrowingDetailViewModel
 import com.example.feature.home.presentation.home.HomeViewModel
 import com.example.feature.home.presentation.subscriptiondetail.SubscriptionDetailViewModel
@@ -48,6 +49,7 @@ val homeModule = module {
     factory { GetLibraryDetailUseCase(get()) }
     factory { GetSubscriptionByIdUseCase(get()) }
     factory { GetSubscriptionsUseCase(get()) }
+    factory { WarmUpHomeUseCase(get(), get()) }
 
     viewModel { HomeViewModel(get(), get(), get(), get(), get(), get(), get()) }
     viewModel { BorrowingDetailViewModel(get(), get(), get()) }

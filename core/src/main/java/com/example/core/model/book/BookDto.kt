@@ -30,5 +30,8 @@ data class BookDto(
     val libraryId: String? = null,
     @SerialName("available")
     @JsonNames("is_available", "isAvailable", "availability")
-    val available: Boolean? = null
+    val available: Boolean? = null,
+    @SerialName("rating")
+    @JsonNames("avg_rating", "avgRating", "average_rating", "averageRating")
+    val rating: Double? = null
 )

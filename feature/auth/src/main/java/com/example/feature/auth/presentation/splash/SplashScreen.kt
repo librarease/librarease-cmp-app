@@ -14,7 +14,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -26,24 +25,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.core.R
-import kotlinx.coroutines.delay
 
 @Composable
 fun SplashScreen(
-    viewModel: SplashViewModel = viewModel(),
-    onNavigateToAuth: () -> Unit = {},
-    onNavigateToHome: () -> Unit = {}
 ) {
-    LaunchedEffect(Unit) {
-        delay(2000)
-        viewModel.checkAuthState(
-            onAuthenticated = onNavigateToHome,
-            onUnauthenticated = onNavigateToAuth
-        )
-    }
-
     SplashContent()
 }
 

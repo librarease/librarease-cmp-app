@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -23,40 +22,30 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.AccountBalance
-import androidx.compose.material.icons.outlined.CheckCircle
-import androidx.compose.material.icons.outlined.DateRange
+import androidx.compose.material.icons.outlined.KeyboardArrowDown
+import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Warning
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.produceState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil3.compose.SubcomposeAsyncImage
-import coil3.request.CachePolicy
-import coil3.request.ImageRequest
 import com.example.core.R
 import com.example.core.model.book.LibraryInfo
 import com.example.feature.home.domain.model.Subscription
-import com.google.zxing.BarcodeFormat
-import com.google.zxing.qrcode.QRCodeWriter
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.util.Locale
 import java.util.TimeZone
+import kotlin.math.min
 
 @Composable
 fun SubscriptionDetailScreen(
@@ -87,6 +76,7 @@ fun SubscriptionDetailScreen(
                 SubscriptionDetailContent(
                     subscription = uiState.subscription,
                     library = uiState.library,
+                    qrBitmap = uiState.qrBitmap,
                     onBackClick = onBackClick
                 )
             }
@@ -98,13 +88,16 @@ fun SubscriptionDetailScreen(
 private fun SubscriptionDetailContent(
     subscription: Subscription,
     library: LibraryInfo?,
+    qrBitmap: Bitmap?,
     onBackClick: () -> Unit
 ) {
     val libraryName = library?.name ?: subscription.libraryName ?: "Library"
     val membershipName = subscription.membershipName.ifBlank { "Membership" }
-    val logoUrl = library?.logo ?: subscription.libraryLogoUrl
     val status = subscription.statusLabel()
     val statusColor = subscription.statusColor()
+    val memberName = "Library Member"
+    val memberTier = membershipName.ifBlank { "Member Tier" }.uppercase(Locale.US)
+    val memberCodeSource = subscription.membershipId ?: subscription.id
 
     Column(
         modifier = Modifier
@@ -142,152 +135,213 @@ private fun SubscriptionDetailContent(
 
         Spacer(modifier = Modifier.height(18.dp))
 
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(20.dp))
-                .background(Color.White)
-                .border(
-                    width = 1.dp,
-                    color = colorResource(id = R.color.border),
-                    shape = RoundedCornerShape(20.dp)
-                )
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(colorResource(id = R.color.surface_light))
-                    .padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                LibraryLogo(logoUrl = logoUrl)
-                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Text(
-                        text = libraryName,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = colorResource(id = R.color.primary)
-                    )
-                    Text(
-                        text = membershipName,
-                        fontSize = 13.sp,
-                        color = colorResource(id = R.color.secondary)
-                    )
-                }
-            }
+        LibraryPickerPill(
+            libraryName = libraryName,
+            modifier = Modifier.fillMaxWidth()
+        )
 
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 20.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                QrCodeCard(subscriptionId = subscription.id)
-            }
+        Spacer(modifier = Modifier.height(22.dp))
 
-            DividerLine()
-
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                DetailRow(
-                    label = "Type",
-                    value = membershipName,
-                    icon = Icons.Outlined.AccountBalance
-                )
-                DetailRow(
-                    label = "Status",
-                    value = status,
-                    icon = if (status.lowercase(Locale.US) == "active") {
-                        Icons.Outlined.CheckCircle
-                    } else {
-                        Icons.Outlined.Warning
-                    },
-                    valueColor = statusColor,
-                    badge = true
-                )
-                DetailRow(
-                    label = "Valid Until",
-                    value = formatFullDate(subscription.expiresAt),
-                    icon = Icons.Outlined.DateRange
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Text(
-            text = "Show this QR code at the library entrance for quick check-in.",
-            fontSize = 12.sp,
-            color = colorResource(id = R.color.secondary),
-            textAlign = TextAlign.Center,
+        MembershipCard(
+            memberName = memberName,
+            memberTier = memberTier,
+            status = status,
+            statusColor = statusColor,
+            qrBitmap = qrBitmap,
+            memberCode = formatMemberCode(memberCodeSource),
             modifier = Modifier.fillMaxWidth()
         )
     }
 }
 
 @Composable
-private fun LibraryLogo(logoUrl: String?) {
-    val context = LocalContext.current
-    Box(
-        modifier = Modifier
-            .size(46.dp)
-            .clip(RoundedCornerShape(14.dp))
-            .background(colorResource(id = R.color.border)),
-        contentAlignment = Alignment.Center
+private fun LibraryPickerPill(
+    libraryName: String,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.Center
     ) {
-        if (!logoUrl.isNullOrBlank()) {
-            val request = ImageRequest.Builder(context)
-                .data(logoUrl)
-                .memoryCachePolicy(CachePolicy.ENABLED)
-                .diskCachePolicy(CachePolicy.ENABLED)
-                .build()
-            SubcomposeAsyncImage(
-                model = request,
-                contentDescription = "Library logo",
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize(),
-                loading = {
-                    CircularProgressIndicator(
-                        color = colorResource(id = R.color.accent),
-                        strokeWidth = 2.dp,
-                        modifier = Modifier.size(20.dp)
-                    )
-                },
-                error = {
-                    Icon(
-                        imageVector = Icons.Outlined.AccountBalance,
-                        contentDescription = null,
-                        tint = colorResource(id = R.color.tertiary)
-                    )
-                }
-            )
-        } else {
+        Row(
+            modifier = Modifier
+                .clip(RoundedCornerShape(999.dp))
+                .background(colorResource(id = R.color.surface_light))
+                .border(
+                    width = 1.dp,
+                    color = colorResource(id = R.color.border),
+                    shape = RoundedCornerShape(999.dp)
+                )
+                .padding(horizontal = 16.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
             Icon(
                 imageVector = Icons.Outlined.AccountBalance,
                 contentDescription = null,
-                tint = colorResource(id = R.color.tertiary)
+                tint = Color(0xFF3B82F6),
+                modifier = Modifier.size(18.dp)
+            )
+            Text(
+                text = libraryName,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = colorResource(id = R.color.primary),
+                maxLines = 1
+            )
+            Icon(
+                imageVector = Icons.Outlined.KeyboardArrowDown,
+                contentDescription = null,
+                tint = colorResource(id = R.color.secondary)
             )
         }
     }
 }
 
 @Composable
-private fun QrCodeCard(subscriptionId: String) {
-    val qrBitmap by produceState<Bitmap?>(initialValue = null, key1 = subscriptionId) {
-        value = withContext(Dispatchers.Default) {
-            generateQrBitmap(subscriptionId, 420)
+private fun MembershipCard(
+    memberName: String,
+    memberTier: String,
+    status: String,
+    statusColor: Color,
+    qrBitmap: Bitmap?,
+    memberCode: String,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .clip(RoundedCornerShape(28.dp))
+            .background(colorResource(id = R.color.surface_light))
+            .border(
+                width = 1.dp,
+                color = colorResource(id = R.color.border),
+                shape = RoundedCornerShape(28.dp)
+            )
+            .padding(horizontal = 18.dp, vertical = 20.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            MemberAvatar()
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = memberName,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = colorResource(id = R.color.primary),
+                    maxLines = 1
+                )
+                Text(
+                    text = memberTier,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = colorResource(id = R.color.secondary),
+                    letterSpacing = 1.sp
+                )
+            }
+            StatusPill(
+                label = status.uppercase(Locale.US),
+                color = statusColor
+            )
         }
-    }
 
+        Spacer(modifier = Modifier.height(20.dp))
+
+        Box(
+            modifier = Modifier.fillMaxWidth(),
+            contentAlignment = Alignment.Center
+        ) {
+            QrCodeCard(
+                qrBitmap = qrBitmap,
+                cardBackground = Color.White,
+                qrSize = 220.dp
+            )
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text(
+            text = "MEMBER CODE",
+            fontSize = 12.sp,
+            letterSpacing = 2.sp,
+            fontWeight = FontWeight.Medium,
+            color = colorResource(id = R.color.secondary),
+            modifier = Modifier.fillMaxWidth(),
+            textAlign = TextAlign.Center
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = memberCode,
+            fontSize = 20.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color(0xFF3B82F6),
+            modifier = Modifier.fillMaxWidth(),
+            textAlign = TextAlign.Center,
+            letterSpacing = 2.sp
+        )
+    }
+}
+
+@Composable
+private fun MemberAvatar() {
+    Box(
+        modifier = Modifier
+            .size(56.dp)
+            .clip(CircleShape)
+            .border(2.dp, Color(0xFF3B82F6), CircleShape)
+            .background(colorResource(id = R.color.border)),
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(
+            imageVector = Icons.Outlined.Person,
+            contentDescription = null,
+            tint = colorResource(id = R.color.primary),
+            modifier = Modifier.size(24.dp)
+        )
+    }
+}
+
+@Composable
+private fun StatusPill(
+    label: String,
+    color: Color
+) {
+    Row(
+        modifier = Modifier
+            .clip(RoundedCornerShape(999.dp))
+            .background(color.copy(alpha = 0.18f))
+            .border(1.dp, color.copy(alpha = 0.4f), RoundedCornerShape(999.dp))
+            .padding(horizontal = 12.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .size(8.dp)
+                .clip(CircleShape)
+                .background(color)
+        )
+        Text(
+            text = label,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = color
+        )
+    }
+}
+
+@Composable
+private fun QrCodeCard(
+    qrBitmap: Bitmap?,
+    cardBackground: Color,
+    qrSize: androidx.compose.ui.unit.Dp
+) {
     Box(
         modifier = Modifier
             .clip(RoundedCornerShape(18.dp))
-            .background(colorResource(id = R.color.background))
+            .background(cardBackground)
             .border(
                 width = 1.dp,
                 color = colorResource(id = R.color.border),
@@ -298,9 +352,9 @@ private fun QrCodeCard(subscriptionId: String) {
     ) {
         if (qrBitmap != null) {
             androidx.compose.foundation.Image(
-                bitmap = qrBitmap!!.asImageBitmap(),
+                bitmap = qrBitmap.asImageBitmap(),
                 contentDescription = "Subscription QR",
-                modifier = Modifier.size(190.dp)
+                modifier = Modifier.size(qrSize)
             )
         } else {
             CircularProgressIndicator(
@@ -310,75 +364,6 @@ private fun QrCodeCard(subscriptionId: String) {
             )
         }
     }
-
-    Spacer(modifier = Modifier.height(10.dp))
-    Text(
-        text = subscriptionId,
-        fontSize = 12.sp,
-        color = colorResource(id = R.color.secondary)
-    )
-}
-
-@Composable
-private fun DetailRow(
-    label: String,
-    value: String,
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    valueColor: Color = colorResource(id = R.color.primary),
-    badge: Boolean = false
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = colorResource(id = R.color.tertiary),
-                modifier = Modifier.size(18.dp)
-            )
-            Text(
-                text = label,
-                fontSize = 13.sp,
-                color = colorResource(id = R.color.secondary)
-            )
-        }
-
-        if (badge) {
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(50))
-                    .background(valueColor.copy(alpha = 0.12f))
-                    .padding(horizontal = 10.dp, vertical = 4.dp)
-            ) {
-                Text(
-                    text = value,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = valueColor
-                )
-            }
-        } else {
-            Text(
-                text = value,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = valueColor
-            )
-        }
-    }
-}
-
-@Composable
-private fun DividerLine() {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(1.dp)
-            .background(colorResource(id = R.color.border))
-    )
 }
 
 @Composable
@@ -416,22 +401,6 @@ private fun ErrorState(
     }
 }
 
-private fun generateQrBitmap(data: String, size: Int): Bitmap? {
-    if (data.isBlank()) return null
-    return try {
-        val matrix = QRCodeWriter().encode(data, BarcodeFormat.QR_CODE, size, size)
-        val bmp = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
-        for (x in 0 until size) {
-            for (y in 0 until size) {
-                bmp.setPixel(x, y, if (matrix[x, y]) android.graphics.Color.BLACK else android.graphics.Color.WHITE)
-            }
-        }
-        bmp
-    } catch (e: Exception) {
-        null
-    }
-}
-
 private fun Subscription.statusLabel(): String {
     val now = java.util.Date()
     val expiry = parseDate(expiresAt) ?: return "Active"
@@ -446,14 +415,15 @@ private fun Subscription.statusColor(): Color {
     return when (statusLabel().lowercase(Locale.US)) {
         "expired" -> Color(0xFFE53935)
         "expiring" -> Color(0xFFF57C00)
-        else -> Color(0xFF2E7D32)
+        else -> Color(0xFF3B82F6)
     }
 }
 
-private fun formatFullDate(value: String?): String {
-    val date = parseDate(value) ?: return "--"
-    val output = SimpleDateFormat("MMMM d, yyyy", Locale.US)
-    return output.format(date)
+private fun formatMemberCode(value: String): String {
+    val cleaned = value.filter { it.isLetterOrDigit() }
+    if (cleaned.isBlank()) return "--"
+    val display = cleaned.takeLast(min(12, cleaned.length)).uppercase(Locale.US)
+    return display.chunked(3).joinToString(" ")
 }
 
 private fun parseDate(value: String?): java.util.Date? {

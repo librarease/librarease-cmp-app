@@ -22,6 +22,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
@@ -58,24 +59,29 @@ fun MainBottomNavigationBar(
     modifier: Modifier = Modifier
 ) {
     val surface = colorResource(id = R.color.surface_light)
-    val glassTop = surface.copy(alpha = 0.45f)
-    val glassBottom = surface.copy(alpha = 0.75f)
-    val glassBorder = colorResource(id = R.color.border).copy(alpha = 0.55f)
-    val highlight = Color.White.copy(alpha = 0.18f)
+    val glassTop = surface.copy(alpha = 0.32f)
+    val glassBottom = surface.copy(alpha = 0.62f)
+    val glassBorder = colorResource(id = R.color.border).copy(alpha = 0.32f)
+    val highlight = Color.White.copy(alpha = 0.08f)
+    val shape = RoundedCornerShape(topStart = 22.dp, topEnd = 22.dp)
 
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(topStart = 22.dp, topEnd = 22.dp))
+            .graphicsLayer {
+                this.shape = shape
+                clip = true
+            }
             .border(
                 width = 1.dp,
                 color = glassBorder,
-                shape = RoundedCornerShape(topStart = 22.dp, topEnd = 22.dp)
+                shape = shape
             )
     ) {
         Box(
             modifier = Modifier
                 .matchParentSize()
+                .clip(shape)
                 .background(
                     Brush.verticalGradient(
                         colors = listOf(glassTop, glassBottom)
@@ -86,6 +92,7 @@ fun MainBottomNavigationBar(
         Box(
             modifier = Modifier
                 .matchParentSize()
+                .clip(shape)
                 .background(
                     Brush.verticalGradient(
                         colors = listOf(highlight, Color.Transparent)
@@ -113,7 +120,7 @@ fun MainBottomNavigationBar(
                         imageVector = item.icon,
                         contentDescription = item.label,
                         tint = if (isSelected) {
-                            colorResource(R.color.accent)
+                            Color(0xFF2E7D32)
                         } else {
                             colorResource(id = R.color.secondary)
                         }
@@ -123,7 +130,7 @@ fun MainBottomNavigationBar(
                         text = item.label,
                         fontSize = 10.sp,
                         color = if (isSelected) {
-                            colorResource(id = R.color.accent)
+                            Color(0xFF2E7D32)
                         } else {
                             colorResource(id = R.color.secondary)
                         }

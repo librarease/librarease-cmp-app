@@ -104,6 +104,7 @@ private fun BorrowingDetailContent(
 ) {
     val title = bookDetail?.title?.ifBlank { borrowing.book.title } ?: borrowing.book.title
     val author = bookDetail?.author?.ifBlank { borrowing.book.author } ?: borrowing.book.author
+    val authorName = author.ifBlank { "Unknown author" }
     val year = bookDetail?.year ?: borrowing.book.year
     val coverUrl = bookDetail?.coverUrl ?: borrowing.book.coverUrl
     val description = bookDetail?.description.orEmpty()
@@ -116,7 +117,7 @@ private fun BorrowingDetailContent(
     val secondaryRaw = palette.secondaryColor(primaryRaw)
     val primary = primaryRaw.soften(background, 0.35f)
     val secondary = secondaryRaw.soften(background, 0.45f)
-    val overlayTextColor = if (primary.luminance() < 0.5f) Color(0xFFEFF4F8) else Color(0xFF2D2D2D)
+    val overlayTextColor = colorResource(id = R.color.primary)
 
     Column(
         modifier = Modifier
@@ -125,7 +126,7 @@ private fun BorrowingDetailContent(
     ) {
         HeaderSection(
             title = title,
-            author = author,
+            authorName = authorName,
             year = year,
             coverUrl = coverUrl,
             overlayTextColor = overlayTextColor,
@@ -165,7 +166,7 @@ private fun BorrowingDetailContent(
 @Composable
 private fun HeaderSection(
     title: String,
-    author: String,
+    authorName: String,
     year: Int?,
     coverUrl: String?,
     overlayTextColor: Color,
@@ -249,14 +250,23 @@ private fun HeaderSection(
 
             Spacer(modifier = Modifier.height(6.dp))
 
-            val authorLine = if (year != null) "$author · $year" else author
             Text(
-                text = authorLine,
+                text = authorName,
                 fontSize = 14.sp,
                 color = overlayTextColor.copy(alpha = 0.75f),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
+            if (year != null) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = year.toString(),
+                    fontSize = 12.sp,
+                    color = overlayTextColor.copy(alpha = 0.6f),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
         }
     }
 }
@@ -271,7 +281,7 @@ private fun BorrowingMetaCard(
         modifier = Modifier
             .padding(horizontal = 20.dp)
             .clip(RoundedCornerShape(18.dp))
-            .background(Color.White)
+            .background(colorResource(id = R.color.surface_light))
             .border(
                 width = 1.dp,
                 color = colorResource(id = R.color.border),
@@ -339,7 +349,7 @@ private fun BorrowedFromCard(library: LibraryInfo?) {
         modifier = Modifier
             .padding(horizontal = 20.dp)
             .clip(RoundedCornerShape(18.dp))
-            .background(Color.White)
+            .background(colorResource(id = R.color.surface_light))
             .border(
                 width = 1.dp,
                 color = colorResource(id = R.color.border),

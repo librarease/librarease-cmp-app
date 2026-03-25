@@ -30,7 +30,8 @@ fun BorrowingDto.toDomain(): Borrowing {
         coverUrl = null,
         colors = null,
         libraryId = null,
-        available = null
+        available = null,
+        rating = null
     )
 
     return Borrowing(
@@ -57,7 +58,8 @@ fun BookDto.toDomain(): BookSummary {
         coverUrl = coverUrl,
         colors = colors?.toDomain(),
         libraryId = libraryId,
-        available = available
+        available = available,
+        rating = rating
     )
 }
 

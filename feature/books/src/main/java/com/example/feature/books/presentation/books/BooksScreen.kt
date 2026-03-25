@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
@@ -18,8 +19,12 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.clickable
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.StarHalf
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.outlined.ArrowForward
+import androidx.compose.material.icons.outlined.StarOutline
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -39,7 +44,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
@@ -54,6 +58,10 @@ import coil3.request.crossfade
 import com.example.core.R
 import com.example.core.model.book.BookSummary
 import com.example.core.model.book.HslColor
+import androidx.compose.foundation.isSystemInDarkTheme
+import java.util.Locale
+import kotlin.math.floor
+import androidx.compose.ui.draw.shadow
 
 @Composable
 fun BooksScreen(
@@ -83,8 +91,9 @@ fun BooksScreen(
         modifier = modifier
             .fillMaxSize()
             .background(colorResource(id = R.color.background))
+            .statusBarsPadding()
             .padding(horizontal = 20.dp)
-            .padding(top = 24.dp, bottom = 24.dp)
+            .padding(top = 16.dp, bottom = 24.dp)
     ) {
         SearchBar(
             value = query,
@@ -220,20 +229,38 @@ private fun ErrorState(
 
 @Composable
 private fun BookRow(book: BookSummary) {
-    val baseColor = book.cardBaseColor()
-    val gradient = Brush.horizontalGradient(
-        colors = listOf(baseColor.soften(0.82f), baseColor.soften(0.62f))
+    val cardGradient = Brush.horizontalGradient(
+        colors = listOf(
+            colorResource(id = R.color.surface_light),
+            colorResource(id = R.color.background)
+        )
     )
+    val coverBackdrop = book.coverBackdropColor()
+    val ratingValue = book.rating?.coerceIn(0.0, 5.0)
 
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(24.dp))
-            .background(gradient)
+            .background(cardGradient)
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        BookCover(coverUrl = book.coverUrl)
+        Box(
+            modifier = Modifier
+                .size(96.dp)
+                .clip(RoundedCornerShape(20.dp))
+                .background(coverBackdrop),
+            contentAlignment = Alignment.Center
+        ) {
+            BookCover(
+                coverUrl = book.coverUrl,
+                width = 64.dp,
+                height = 92.dp,
+                cornerRadius = 12.dp,
+                addShadow = true
+            )
+        }
         Spacer(modifier = Modifier.width(16.dp))
         Column(modifier = Modifier.weight(1f)) {
             Text(
@@ -251,15 +278,45 @@ private fun BookRow(book: BookSummary) {
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
-            Spacer(modifier = Modifier.height(12.dp))
-            AvailabilityChip(isAvailable = book.available != false)
+            Spacer(modifier = Modifier.height(8.dp))
+            RatingRow(rating = ratingValue)
+            Spacer(modifier = Modifier.height(10.dp))
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Text(
+                    text = "VIEW DETAILS",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color(0xFF3B82F6)
+                )
+                Icon(
+                    imageVector = Icons.Outlined.ArrowForward,
+                    contentDescription = null,
+                    tint = Color(0xFF3B82F6),
+                    modifier = Modifier.size(14.dp)
+                )
+            }
         }
     }
 }
 
 @Composable
-private fun BookCover(coverUrl: String?) {
+private fun BookCover(
+    coverUrl: String?,
+    width: androidx.compose.ui.unit.Dp = 80.dp,
+    height: androidx.compose.ui.unit.Dp = 110.dp,
+    cornerRadius: androidx.compose.ui.unit.Dp = 14.dp,
+    addShadow: Boolean = false
+) {
     val context = LocalContext.current
+    val isDark = isSystemInDarkTheme()
+    val placeholderColor = if (isDark) {
+        colorResource(id = R.color.surface_light)
+    } else {
+        Color(0xFFE6E2F0)
+    }
     val request = remember(coverUrl) {
         ImageRequest.Builder(context)
             .data(coverUrl)
@@ -269,63 +326,94 @@ private fun BookCover(coverUrl: String?) {
             .build()
     }
 
+    val coverModifier = if (addShadow) {
+        Modifier
+            .shadow(6.dp, RoundedCornerShape(cornerRadius))
+            .clip(RoundedCornerShape(cornerRadius))
+    } else {
+        Modifier.clip(RoundedCornerShape(cornerRadius))
+    }
+
     SubcomposeAsyncImage(
         model = request,
         contentDescription = null,
         contentScale = ContentScale.Crop,
         modifier = Modifier
-            .size(width = 80.dp, height = 110.dp)
-            .clip(RoundedCornerShape(14.dp)),
+            .size(width = width, height = height)
+            .then(coverModifier),
         loading = {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Color(0xFFE6E2F0))
+                    .background(placeholderColor)
             )
         },
         error = {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Color(0xFFDCD6EA))
+                    .background(placeholderColor.copy(alpha = 0.9f))
             )
         }
     )
 }
 
 @Composable
-private fun AvailabilityChip(isAvailable: Boolean) {
-    val background = if (isAvailable) Color(0xFFE5F4ED) else Color(0xFFFBE7E4)
-    val textColor = if (isAvailable) Color(0xFF1B7F4B) else Color(0xFFB3261E)
-    val label = if (isAvailable) "Available" else "Unavailable"
+private fun RatingRow(rating: Double?) {
+    val normalized = (rating ?: 0.0).coerceIn(0.0, 5.0)
+    val fullStars = floor(normalized).toInt()
+    val hasHalf = normalized - fullStars >= 0.5
+    val emptyStars = 5 - fullStars - if (hasHalf) 1 else 0
 
-    Box(
-        modifier = Modifier
-            .clip(RoundedCornerShape(14.dp))
-            .background(background)
-            .padding(horizontal = 12.dp, vertical = 6.dp)
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp)
     ) {
+        repeat(fullStars) {
+            Icon(
+                imageVector = Icons.Filled.Star,
+                contentDescription = null,
+                tint = Color(0xFFFBBF24),
+                modifier = Modifier.size(16.dp)
+            )
+        }
+        if (hasHalf) {
+            Icon(
+                imageVector = Icons.Filled.StarHalf,
+                contentDescription = null,
+                tint = Color(0xFFFBBF24),
+                modifier = Modifier.size(16.dp)
+            )
+        }
+        repeat(emptyStars) {
+            Icon(
+                imageVector = Icons.Outlined.StarOutline,
+                contentDescription = null,
+                tint = Color(0xFF94A3B8),
+                modifier = Modifier.size(16.dp)
+            )
+        }
+        Spacer(modifier = Modifier.width(4.dp))
         Text(
-            text = label,
-            color = textColor,
+            text = if (rating != null) String.format(Locale.US, "(%.1f)", normalized) else "(--)",
             fontSize = 12.sp,
-            fontWeight = FontWeight.Medium
+            color = colorResource(id = R.color.secondary)
         )
     }
 }
 
-private fun BookSummary.cardBaseColor(): Color {
-    val tone = colors?.lightMuted
-        ?: colors?.muted
-        ?: colors?.lightVibrant
+private fun BookSummary.coverBackdropColor(): Color {
+    val tone = colors?.muted
+        ?: colors?.lightMuted
         ?: colors?.vibrant
+        ?: colors?.lightVibrant
         ?: colors?.darkMuted
         ?: colors?.darkVibrant
 
     return tone?.toComposeColor(
-        saturationMultiplier = 0.65f,
-        lightnessOffset = 0.18f
-    ) ?: Color(0xFFE6E1F0)
+        saturationMultiplier = 0.7f,
+        lightnessOffset = 0.08f
+    ) ?: Color(0xFF5CA39F)
 }
 
 private fun HslColor.toComposeColor(
@@ -339,8 +427,4 @@ private fun HslColor.toComposeColor(
         saturation = adjustedSaturation,
         lightness = adjustedLightness
     )
-}
-
-private fun Color.soften(amount: Float): Color {
-    return lerp(this, Color.White, amount.coerceIn(0f, 1f))
 }

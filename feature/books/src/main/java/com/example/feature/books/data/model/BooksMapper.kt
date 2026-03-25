@@ -23,7 +23,8 @@ fun BookDto.toDomain(): BookSummary {
         coverUrl = coverUrl,
         colors = colors?.toDomain(),
         libraryId = libraryId,
-        available = available
+        available = available,
+        rating = rating
     )
 }
 
@@ -54,7 +55,8 @@ fun BookSummary.toDto(): BookDto {
         coverUrl = coverUrl,
         colors = colors?.toDto(),
         libraryId = libraryId,
-        available = available
+        available = available,
+        rating = rating
     )
 }
 

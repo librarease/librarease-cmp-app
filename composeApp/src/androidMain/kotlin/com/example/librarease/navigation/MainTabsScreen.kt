@@ -41,7 +41,11 @@ fun MainTabsScreen(
     val navBackStackEntry by tabNavController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route ?: MainTabRoutes.HOME
 
-    Box(modifier = modifier.fillMaxSize()) {
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .background(colorResource(id = R.color.background))
+    ) {
         NavHost(
             navController = tabNavController,
             startDestination = MainTabRoutes.HOME,
@@ -59,6 +63,11 @@ fun MainTabsScreen(
                 LaunchedEffect(homeUiState) {
                     if (homeUiState is com.example.feature.home.presentation.home.HomeUiState.Idle) {
                         homeViewModel.loadHome()
+                    }
+                }
+                LaunchedEffect(Unit) {
+                    if (homeUiState is com.example.feature.home.presentation.home.HomeUiState.Content) {
+                        homeViewModel.refresh(null)
                     }
                 }
 
