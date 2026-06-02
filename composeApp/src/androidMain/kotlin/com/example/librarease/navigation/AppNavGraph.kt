@@ -21,6 +21,8 @@ import com.example.feature.auth.presentation.signup.SignUpViewModel
 import com.example.feature.auth.presentation.splash.SplashScreen
 import com.example.feature.books.presentation.bookdetail.BookDetailScreen
 import com.example.feature.books.presentation.bookdetail.BookDetailViewModel
+import com.example.feature.books.presentation.bookreviews.BookReviewsScreen
+import com.example.feature.books.presentation.bookreviews.BookReviewsViewModel
 import com.example.feature.home.presentation.borrowingdetail.BorrowingDetailScreen
 import com.example.feature.home.presentation.borrowingdetail.BorrowingDetailViewModel
 import com.example.feature.home.presentation.subscriptiondetail.SubscriptionDetailScreen
@@ -40,6 +42,9 @@ sealed class AppScreen(val route: String) {
     }
     data object BookDetail : AppScreen("book/{bookId}") {
         fun routeForId(bookId: String): String = "book/$bookId"
+    }
+    data object BookReviews : AppScreen("book/{bookId}/reviews") {
+        fun routeForId(bookId: String): String = "book/$bookId/reviews"
     }
 }
 
@@ -179,6 +184,7 @@ fun AppNavGraph(
             }
 
             BorrowingDetailScreen(
+                viewModel = detailViewModel,
                 uiState = detailUiState,
                 onBackClick = { navController.popBackStack(AppScreen.Home.route, false) },
                 onRetryClick = { detailViewModel.loadBorrowing(borrowingId) }
@@ -215,6 +221,7 @@ fun AppNavGraph(
             val bookId = backStackEntry.arguments?.getString("bookId").orEmpty()
             val detailViewModel: BookDetailViewModel = koinViewModel()
             val detailUiState by detailViewModel.uiState.collectAsState()
+            val reviewsPreviewState by detailViewModel.reviewsPreviewState.collectAsState()
 
             LaunchedEffect(bookId) {
                 detailViewModel.loadBook(bookId)
@@ -222,9 +229,36 @@ fun AppNavGraph(
 
             BookDetailScreen(
                 uiState = detailUiState,
+                reviewsPreviewState = reviewsPreviewState,
                 onBackClick = { navController.popBackStack(AppScreen.Home.route, false) },
                 onRetryClick = { detailViewModel.loadBook(bookId) },
-                onAddToWatchlistClick = {}
+                onAddToWatchlistClick = {},
+                onViewAllReviewsClick = {
+                    navController.navigate(AppScreen.BookReviews.routeForId(bookId))
+                }
+            )
+        }
+
+        composable(
+            route = AppScreen.BookReviews.route,
+            arguments = listOf(
+                navArgument("bookId") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val bookId = backStackEntry.arguments?.getString("bookId").orEmpty()
+            val reviewsViewModel: BookReviewsViewModel = koinViewModel()
+            val reviewsUiState by reviewsViewModel.uiState.collectAsState()
+
+            LaunchedEffect(bookId) {
+                reviewsViewModel.load(bookId)
+            }
+
+            BookReviewsScreen(
+                uiState = reviewsUiState,
+                onBackClick = { navController.popBackStack() },
+                onRefresh = { reviewsViewModel.refresh() },
+                onLoadNextPage = { reviewsViewModel.loadNextPage() },
+                onRetryClick = { reviewsViewModel.load(bookId, force = true) }
             )
         }
 

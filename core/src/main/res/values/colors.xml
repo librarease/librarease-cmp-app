@@ -3,7 +3,8 @@
     <color name="primary">#F3F4F6</color>
     <color name="secondary">#9CA3AF</color>
     <color name="tertiary">#D1BFA6</color>
-    <color name="accent">#4A5D4E</color>
+    <color name="accent">#FF2E7D32</color>
+    <color name="splash_color">#4A5D4E</color>
     <color name="accent_20">#334A5D4E</color>
     <color name="background">#0F172A</color>
     <color name="surface">#E5E7EB</color>

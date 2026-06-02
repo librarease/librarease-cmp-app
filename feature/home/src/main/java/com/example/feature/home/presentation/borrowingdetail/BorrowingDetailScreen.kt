@@ -21,16 +21,31 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.AutoStories
 import androidx.compose.material.icons.outlined.DateRange
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.Star
+import androidx.compose.material.icons.outlined.StarOutline
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -53,6 +68,7 @@ import com.example.core.model.book.BookDetail
 import com.example.core.model.book.BookPalette
 import com.example.core.model.book.HslColor
 import com.example.core.model.book.LibraryInfo
+import com.example.core.presentation.review.ReviewItem
 import com.example.feature.home.domain.model.Borrowing
 import java.text.SimpleDateFormat
 import java.util.Locale
@@ -60,15 +76,40 @@ import java.util.TimeZone
 
 @Composable
 fun BorrowingDetailScreen(
+    viewModel: BorrowingDetailViewModel,
     uiState: BorrowingDetailUiState,
     onBackClick: () -> Unit,
     onRetryClick: () -> Unit
 ) {
+    val reviewSubmissionState by viewModel.reviewSubmissionState.collectAsState()
+    val reviews by viewModel.reviews.collectAsState()
+    val userHasReviewed by viewModel.userHasReviewed.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(reviewSubmissionState) {
+        when (val state = reviewSubmissionState) {
+            is ReviewSubmissionState.Success -> {
+                snackbarHostState.showSnackbar("Review submitted successfully!")
+                viewModel.resetReviewSubmissionState()
+            }
+            is ReviewSubmissionState.Error -> {
+                snackbarHostState.showSnackbar(state.message)
+                viewModel.resetReviewSubmissionState()
+            }
+            else -> {}
+        }
+    }
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(colorResource(id = R.color.background))
     ) {
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(16.dp)
+        )
         when (uiState) {
             is BorrowingDetailUiState.Loading -> {
                 CircularProgressIndicator(
@@ -88,7 +129,13 @@ fun BorrowingDetailScreen(
                     borrowing = uiState.borrowing,
                     bookDetail = uiState.bookDetail,
                     isBookLoading = uiState.isBookLoading,
-                    onBackClick = onBackClick
+                    reviews = reviews,
+                    userHasReviewed = userHasReviewed,
+                    reviewSubmissionState = reviewSubmissionState,
+                    onBackClick = onBackClick,
+                    onSubmitReview = { rating, comment ->
+                        viewModel.submitReview(uiState.borrowing.id, uiState.borrowing.bookId, rating, comment)
+                    }
                 )
             }
         }
@@ -100,7 +147,11 @@ private fun BorrowingDetailContent(
     borrowing: Borrowing,
     bookDetail: BookDetail?,
     isBookLoading: Boolean,
-    onBackClick: () -> Unit
+    reviews: List<com.example.core.model.review.Review>,
+    userHasReviewed: Boolean,
+    reviewSubmissionState: ReviewSubmissionState,
+    onBackClick: () -> Unit,
+    onSubmitReview: (Int, String) -> Unit
 ) {
     val title = bookDetail?.title?.ifBlank { borrowing.book.title } ?: borrowing.book.title
     val author = bookDetail?.author?.ifBlank { borrowing.book.author } ?: borrowing.book.author
@@ -159,7 +210,23 @@ private fun BorrowingDetailContent(
             isLoading = isBookLoading
         )
 
-        Spacer(modifier = Modifier.height(20.dp))
+        Spacer(modifier = Modifier.height(24.dp))
+
+        if (!userHasReviewed) {
+            ReviewSection(
+                borrowingId = borrowing.id,
+                reviewSubmissionState = reviewSubmissionState,
+                onSubmitReview = onSubmitReview
+            )
+            Spacer(modifier = Modifier.height(24.dp))
+        }
+
+        if (reviews.isNotEmpty()) {
+            ReviewsListSection(reviews = reviews)
+            Spacer(modifier = Modifier.height(32.dp))
+        } else {
+            Spacer(modifier = Modifier.height(32.dp))
+        }
     }
 }
 
@@ -572,4 +639,168 @@ private fun HslColor.toComposeColor(): Color {
 
 private fun Color.soften(background: Color, amount: Float): Color {
     return lerp(this, background, amount.coerceIn(0f, 1f))
+}
+
+@Composable
+private fun ReviewsListSection(reviews: List<com.example.core.model.review.Review>) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Text(
+            text = "Reviews (${reviews.size})",
+            fontSize = 18.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = Color.White
+        )
+
+        reviews.forEach { review ->
+            ReviewItem(
+                review = review,
+                showRating = true
+            )
+        }
+    }
+}
+
+@Composable
+private fun ReviewSection(
+    borrowingId: String,
+    reviewSubmissionState: ReviewSubmissionState,
+    onSubmitReview: (Int, String) -> Unit
+) {
+    var rating by remember { mutableIntStateOf(0) }
+    var comment by remember { mutableStateOf("") }
+    val isLoading = reviewSubmissionState is ReviewSubmissionState.Loading
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp)
+    ) {
+        Text(
+            text = "Write a Review",
+            fontSize = 18.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = Color.White
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Text(
+            text = "Share your thoughts about this book",
+            fontSize = 13.sp,
+            color = colorResource(id = R.color.secondary)
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(16.dp))
+                .background(colorResource(id = R.color.surface_light))
+                .border(
+                    width = 1.dp,
+                    color = colorResource(id = R.color.border),
+                    shape = RoundedCornerShape(16.dp)
+                )
+                .padding(16.dp)
+        ) {
+            Column {
+                Text(
+                    text = "Rating",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = colorResource(id = R.color.primary)
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    repeat(5) { index ->
+                        IconButton(
+                            onClick = { rating = index + 1 },
+                            enabled = !isLoading
+                        ) {
+                            Icon(
+                                imageVector = if (index < rating) Icons.Filled.Star else Icons.Outlined.StarOutline,
+                                contentDescription = "Star ${index + 1}",
+                                tint = if (index < rating) Color(0xFFFBBF24) else colorResource(id = R.color.secondary),
+                                modifier = Modifier.size(32.dp)
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Text(
+                    text = "Comment",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = colorResource(id = R.color.primary)
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                OutlinedTextField(
+                    value = comment,
+                    onValueChange = { comment = it },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(120.dp),
+                    placeholder = { Text("Share your experience with this book...") },
+                    enabled = !isLoading,
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.White,
+                        disabledTextColor = Color.White.copy(alpha = 0.6f),
+                        focusedBorderColor = colorResource(id = R.color.accent),
+                        unfocusedBorderColor = colorResource(id = R.color.border),
+                        cursorColor = Color.White
+                    ),
+                    maxLines = 5
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Button(
+                    onClick = {
+                        if (rating > 0 && comment.isNotBlank()) {
+                            onSubmitReview(rating, comment)
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp),
+                    enabled = !isLoading && rating > 0 && comment.isNotBlank(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = colorResource(id = R.color.accent)
+                    )
+                ) {
+                    if (isLoading) {
+                        CircularProgressIndicator(
+                            color = Color.White,
+                            modifier = Modifier.size(20.dp),
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Text(
+                            text = "Submit Review",
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                }
+            }
+        }
+    }
 }

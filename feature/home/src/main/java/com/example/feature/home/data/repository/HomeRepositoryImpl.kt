@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.example.core.storage.authPrefsDataStore
 import com.example.core.model.book.BookDetailDto
+import com.example.core.model.review.toDomain
 import com.example.feature.home.data.model.borrowing_model.BorrowingDto
 import com.example.feature.home.data.model.library_model.LibraryDetailDto
 import com.example.feature.home.data.model.subscription_model.SubscriptionDto
@@ -463,6 +464,56 @@ class HomeRepositoryImpl(
         } catch (e: Exception) {
             Log.w(TAG, "Failed to decode cached borrowings for userId=$userIdTag", e)
             emptyList()
+        }
+    }
+
+    override suspend fun submitReview(
+        borrowingId: String,
+        rating: Int,
+        comment: String
+    ): HomeResult<com.example.core.model.review.Review> {
+        return try {
+            Log.d(TAG, "Submitting review for borrowingId=$borrowingId, rating=$rating")
+            
+            val authToken = resolveAuthToken()
+            val request = com.example.core.model.review.CreateReviewRequest(
+                borrowingId = borrowingId,
+                rating = rating,
+                comment = comment
+            )
+            
+            val reviewDto = homeApiService.submitReview(request, authToken)
+            val review = reviewDto.toDomain()
+            
+            Log.d(TAG, "Review submitted successfully: ${review.id}")
+            HomeResult.Success(review)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to submit review for borrowingId=$borrowingId", e)
+            HomeResult.Error(
+                message = e.message ?: "Failed to submit review",
+                cause = e
+            )
+        }
+    }
+
+    override suspend fun getReviewsForBook(
+        bookId: String
+    ): HomeResult<List<com.example.core.model.review.Review>> {
+        return try {
+            Log.d(TAG, "Fetching reviews for bookId=$bookId")
+            
+            val authToken = resolveAuthToken()
+            val reviewDtos = homeApiService.getReviewsForBook(bookId, authToken)
+            val reviews = reviewDtos.map { it.toDomain() }
+            
+            Log.d(TAG, "Fetched ${reviews.size} reviews for bookId=$bookId")
+            HomeResult.Success(reviews)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to fetch reviews for bookId=$bookId", e)
+            HomeResult.Error(
+                message = e.message ?: "Failed to fetch reviews",
+                cause = e
+            )
         }
     }
 }

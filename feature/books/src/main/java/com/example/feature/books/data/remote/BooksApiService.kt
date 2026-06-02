@@ -3,6 +3,8 @@ package com.example.feature.books.data.remote
 import com.example.core.model.book.BookDetailDto
 import com.example.core.model.book.BookDetailResponse
 import com.example.core.model.book.BookDto
+import com.example.core.model.review.ReviewDto
+import com.example.core.model.review.ReviewsResponse
 import com.example.core.network.ApiConfig
 import com.example.feature.books.data.model.BooksResponse
 import io.ktor.client.HttpClient
@@ -64,6 +66,33 @@ class BooksApiService(
         return decodeBookDetail(payload)
     }
 
+    suspend fun getReviews(
+        bookId: String,
+        libraryId: String?,
+        borrowingId: String?,
+        skip: Int,
+        limit: Int,
+        authToken: String? = null
+    ): List<ReviewDto> {
+        val response = httpClient.get("${ApiConfig.BASE_URL}reviews") {
+            url {
+                parameters.append("book_id", bookId)
+                if (!libraryId.isNullOrBlank()) parameters.append("library_id", libraryId)
+                if (!borrowingId.isNullOrBlank()) parameters.append("borrowing_id", borrowingId)
+                parameters.append("skip", skip.toString())
+                parameters.append("limit", limit.toString())
+            }
+            if (!authToken.isNullOrBlank()) {
+                header(HttpHeaders.Authorization, "Bearer $authToken")
+            }
+        }
+        val payload = response.bodyAsText()
+        if (!response.status.isSuccess()) {
+            throw IllegalStateException("Reviews request failed: ${response.status.value} ${response.status.description}")
+        }
+        return decodeReviews(payload)
+    }
+
     private fun decodeBooks(payload: String): List<BookDto> {
         if (payload.isBlank()) {
             return emptyList()
@@ -91,6 +120,27 @@ class BooksApiService(
         } catch (primary: Exception) {
             try {
                 json.decodeFromString<BookDetailDto>(payload)
+            } catch (secondary: Exception) {
+                throw primary
+            }
+        }
+    }
+
+    private fun decodeReviews(payload: String): List<ReviewDto> {
+        if (payload.isBlank()) {
+            return emptyList()
+        }
+
+        return try {
+            json.decodeFromString<ReviewsResponse>(payload).let { response ->
+                response.data
+                    .ifEmpty { response.reviews }
+                    .ifEmpty { response.items }
+                    .ifEmpty { response.results }
+            }
+        } catch (primary: Exception) {
+            try {
+                json.decodeFromString<List<ReviewDto>>(payload)
             } catch (secondary: Exception) {
                 throw primary
             }

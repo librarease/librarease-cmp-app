@@ -13,8 +13,10 @@ import com.example.feature.home.domain.usecase.GetBorrowingByIdUseCase
 import com.example.feature.home.domain.usecase.GetBorrowingsUseCase
 import com.example.feature.home.domain.usecase.GetBookDetailUseCase
 import com.example.feature.home.domain.usecase.GetLibraryDetailUseCase
+import com.example.feature.home.domain.usecase.GetReviewsForBorrowingUseCase
 import com.example.feature.home.domain.usecase.GetSubscriptionByIdUseCase
 import com.example.feature.home.domain.usecase.GetSubscriptionsUseCase
+import com.example.feature.home.domain.usecase.SubmitReviewUseCase
 import com.example.feature.home.domain.usecase.WarmUpHomeUseCase
 import com.example.feature.home.presentation.borrowingdetail.BorrowingDetailViewModel
 import com.example.feature.home.presentation.home.HomeViewModel
@@ -51,11 +53,13 @@ val homeModule = module {
     factory { GetBorrowingsUseCase(get()) }
     factory { GetBookDetailUseCase(get()) }
     factory { GetLibraryDetailUseCase(get()) }
+    factory { GetReviewsForBorrowingUseCase(get()) }
     factory { GetSubscriptionByIdUseCase(get()) }
     factory { GetSubscriptionsUseCase(get()) }
+    factory { SubmitReviewUseCase(get()) }
     factory { WarmUpHomeUseCase(get(), get()) }
 
     viewModel { HomeViewModel(get(), get(), get(), get(), get(), get(), get(), get<GetCurrentUserUseCase>()) }
-    viewModel { BorrowingDetailViewModel(get(), get(), get()) }
+    viewModel { BorrowingDetailViewModel(get(), get(), get(), get(), get()) }
     viewModel { SubscriptionDetailViewModel(get(), get(), get()) }
 }

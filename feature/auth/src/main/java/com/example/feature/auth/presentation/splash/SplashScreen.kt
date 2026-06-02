@@ -38,7 +38,7 @@ private fun SplashContent() {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(colorResource(id = R.color.accent)),
+            .background(colorResource(id = R.color.splash_color)),
         contentAlignment = Alignment.Center
     ) {
         Column(

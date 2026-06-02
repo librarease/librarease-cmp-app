@@ -8,6 +8,8 @@ import com.example.core.model.book.BookDetail
 import com.example.core.model.book.BookDetailDto
 import com.example.core.model.book.BookDto
 import com.example.core.model.book.BookSummary
+import com.example.core.model.review.Review
+import com.example.core.model.review.toDomain
 import com.example.core.storage.authPrefsDataStore
 import com.example.feature.books.data.model.toDomain
 import com.example.feature.books.data.model.toDto
@@ -18,6 +20,9 @@ import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.tasks.await
 import kotlinx.serialization.json.Json
+import java.text.SimpleDateFormat
+import java.util.Locale
+import java.util.TimeZone
 
 class BooksRepositoryImpl(
     private val booksApiService: BooksApiService,
@@ -79,6 +84,38 @@ class BooksRepositoryImpl(
         } catch (e: Exception) {
             Log.e(TAG, "Failed to load book detail", e)
             BooksResult.Error(e.message ?: "Failed to load book detail", e)
+        }
+    }
+
+    override suspend fun getBookReviews(
+        bookId: String,
+        libraryId: String?,
+        borrowingId: String?,
+        skip: Int,
+        limit: Int
+    ): BooksResult<List<Review>> {
+        if (bookId.isBlank()) {
+            return BooksResult.Error("Book id is required")
+        }
+
+        return try {
+            val authToken = resolveAuthToken()
+            val reviews = booksApiService.getReviews(
+                bookId = bookId,
+                libraryId = libraryId,
+                borrowingId = borrowingId,
+                skip = skip.coerceAtLeast(0),
+                limit = limit.coerceAtLeast(1),
+                authToken = authToken
+            )
+                .map { dto -> dto.toDomain() }
+                .distinctBy { review -> review.stableKey() }
+                .sortedByDescending { review -> review.createdAt.toEpochMillisOrMin() }
+
+            BooksResult.Success(reviews)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to load reviews", e)
+            BooksResult.Error(mapReviewsError(e), e)
         }
     }
 
@@ -169,6 +206,44 @@ class BooksRepositoryImpl(
             Log.w(TAG, "Failed to resolve Firebase auth token", e)
             null
         }
+    }
+
+    private fun mapReviewsError(error: Exception): String {
+        val message = error.message.orEmpty()
+        return when {
+            "401" in message -> "You are not authorized. Please sign in again."
+            "403" in message -> "You do not have permission to view these reviews."
+            "404" in message -> "Reviews were not found for this book."
+            "500" in message || "501" in message || "502" in message || "503" in message || "504" in message ->
+                "Server error. Please try again later."
+            message.contains("timeout", ignoreCase = true) ->
+                "Request timed out. Please try again."
+            message.contains("network", ignoreCase = true) ||
+                message.contains("internet", ignoreCase = true) ||
+                message.contains("unable to resolve", ignoreCase = true) ->
+                "No internet connection. Please check your network."
+            else -> message.ifBlank { "Failed to load reviews" }
+        }
+    }
+
+    private fun Review.stableKey(): String {
+        return id.ifBlank {
+            listOf(comment.orEmpty(), createdAt.orEmpty(), reviewerName.orEmpty())
+                .joinToString("|")
+        }
+    }
+
+    private fun String?.toEpochMillisOrMin(): Long {
+        if (this.isNullOrBlank()) return Long.MIN_VALUE
+
+        val utcParser = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US).apply {
+            timeZone = TimeZone.getTimeZone("UTC")
+        }
+        val dateOnlyParser = SimpleDateFormat("yyyy-MM-dd", Locale.US)
+
+        return runCatching { utcParser.parse(this)?.time }.getOrNull()
+            ?: runCatching { dateOnlyParser.parse(this)?.time }.getOrNull()
+            ?: Long.MIN_VALUE
     }
 
     companion object {

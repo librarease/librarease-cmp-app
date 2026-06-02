@@ -21,6 +21,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.automirrored.outlined.ArrowForward
 import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.BookmarkBorder
@@ -57,13 +58,16 @@ import com.example.core.R
 import com.example.core.model.book.BookDetail
 import com.example.core.model.book.BookPalette
 import com.example.core.model.book.HslColor
+import com.example.core.presentation.review.ReviewItem
 
 @Composable
 fun BookDetailScreen(
     uiState: BookDetailUiState,
+    reviewsPreviewState: BookReviewsPreviewUiState,
     onBackClick: () -> Unit,
     onRetryClick: () -> Unit,
-    onAddToWatchlistClick: () -> Unit
+    onAddToWatchlistClick: () -> Unit,
+    onViewAllReviewsClick: () -> Unit
 ) {
     Box(
         modifier = Modifier
@@ -87,8 +91,10 @@ fun BookDetailScreen(
             is BookDetailUiState.Content -> {
                 BookDetailContent(
                     book = uiState.book,
+                    reviewsPreviewState = reviewsPreviewState,
                     onBackClick = onBackClick,
-                    onAddToWatchlistClick = onAddToWatchlistClick
+                    onAddToWatchlistClick = onAddToWatchlistClick,
+                    onViewAllReviewsClick = onViewAllReviewsClick
                 )
             }
         }
@@ -98,8 +104,10 @@ fun BookDetailScreen(
 @Composable
 private fun BookDetailContent(
     book: BookDetail,
+    reviewsPreviewState: BookReviewsPreviewUiState,
     onBackClick: () -> Unit,
-    onAddToWatchlistClick: () -> Unit
+    onAddToWatchlistClick: () -> Unit,
+    onViewAllReviewsClick: () -> Unit
 ) {
     val title = book.title.ifBlank { "Untitled" }
     val authorName = book.author.ifBlank { "Unknown author" }
@@ -154,6 +162,14 @@ private fun BookDetailContent(
         AboutSection(
             description = description,
             accent = accentBlue
+        )
+
+        Spacer(modifier = Modifier.height(20.dp))
+
+        ReviewsPreviewSection(
+            state = reviewsPreviewState,
+            accent = accentBlue,
+            onViewAllReviewsClick = onViewAllReviewsClick
         )
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -441,6 +457,113 @@ private fun AboutSection(
             )
         }
     }
+}
+
+@Composable
+private fun ReviewsPreviewSection(
+    state: BookReviewsPreviewUiState,
+    accent: Color,
+    onViewAllReviewsClick: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp)
+            .clip(RoundedCornerShape(18.dp))
+            .background(colorResource(id = R.color.surface_light))
+            .padding(16.dp)
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Reviews",
+                fontSize = 14.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = colorResource(id = R.color.tertiary)
+            )
+            Spacer(modifier = Modifier.weight(1f))
+            if (state is BookReviewsPreviewUiState.Content) {
+                Box(
+                    modifier = Modifier
+                        .size(32.dp)
+                        .clip(CircleShape)
+                        .background(accent.copy(alpha = 0.16f))
+                        .clickable { onViewAllReviewsClick() },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Outlined.ArrowForward,
+                        contentDescription = "View all reviews",
+                        tint = accent,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        when (state) {
+            is BookReviewsPreviewUiState.Loading -> {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    ReviewPlaceholder()
+                    ReviewPlaceholder()
+                }
+            }
+            is BookReviewsPreviewUiState.Empty -> {
+                ReviewsEmptyText("No reviews yet.")
+            }
+            is BookReviewsPreviewUiState.Error -> {
+                ReviewsEmptyText(state.message)
+            }
+            is BookReviewsPreviewUiState.Content -> {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    state.reviews.take(2).forEach { review ->
+                        ReviewItem(review = review)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ReviewPlaceholder() {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+            .background(colorResource(id = R.color.background).copy(alpha = 0.42f))
+            .border(1.dp, colorResource(id = R.color.border), RoundedCornerShape(14.dp))
+            .padding(14.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(14.dp)
+                .clip(RoundedCornerShape(999.dp))
+                .background(colorResource(id = R.color.border))
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Box(
+            modifier = Modifier
+                .fillMaxWidth(0.7f)
+                .height(14.dp)
+                .clip(RoundedCornerShape(999.dp))
+                .background(colorResource(id = R.color.border))
+        )
+    }
+}
+
+@Composable
+private fun ReviewsEmptyText(message: String) {
+    Text(
+        text = message,
+        color = colorResource(id = R.color.secondary),
+        fontSize = 13.sp,
+        lineHeight = 18.sp
+    )
 }
 
 @Composable
