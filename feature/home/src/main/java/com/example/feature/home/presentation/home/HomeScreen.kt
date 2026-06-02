@@ -27,6 +27,7 @@ import com.example.core.R
 @Suppress("UnusedParameter")
 fun HomeScreen(
     uiState: HomeUiState,
+    userDisplayName: String = "Reader",
     onRefresh: (String?) -> Unit = {},
     onBorrowingClick: (String) -> Unit = {},
     onSubscriptionClick: (String) -> Unit = {},
@@ -52,7 +53,7 @@ fun HomeScreen(
                 .padding(horizontal = 20.dp)
                 .padding(top = 28.dp, bottom = 24.dp)
         ) {
-            GreetingHeader()
+            GreetingHeader(userDisplayName = userDisplayName)
 
             if (uiState is HomeUiState.Loading) {
                 Spacer(modifier = Modifier.height(12.dp))

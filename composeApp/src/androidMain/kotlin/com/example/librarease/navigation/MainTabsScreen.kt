@@ -4,7 +4,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -16,7 +15,6 @@ import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -28,15 +26,22 @@ import com.example.feature.home.presentation.home.HomeScreen
 import com.example.feature.home.presentation.home.HomeViewModel
 import com.example.feature.home.presentation.home.MainBottomNavigationBar
 import com.example.feature.home.presentation.home.MainTabRoutes
+import com.example.feature.libraries.presentation.libraries.LibrariesScreen
+import com.example.feature.libraries.presentation.libraries.LibrariesViewModel
+import com.example.feature.settings.presentation.settings.SettingsScreen
+import com.example.feature.settings.presentation.settings.SettingsViewModel
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun MainTabsScreen(
     onBorrowingClick: (String) -> Unit,
     onSubscriptionClick: (String) -> Unit,
+    onBookClick: (String) -> Unit,
     onSignOutClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
+    val appVersion = rememberAppVersion()
     val tabNavController = rememberNavController()
     val navBackStackEntry by tabNavController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route ?: MainTabRoutes.HOME
@@ -54,11 +59,12 @@ fun MainTabsScreen(
                 .padding(bottom = 96.dp)
         ) {
             composable(MainTabRoutes.HOME) {
-                val owner = (LocalContext.current as? ComponentActivity)
+                val owner = (context as? ComponentActivity)
                     ?: LocalViewModelStoreOwner.current
                     ?: error("No ViewModelStoreOwner found for Home tab")
                 val homeViewModel: HomeViewModel = koinViewModel(viewModelStoreOwner = owner)
                 val homeUiState by homeViewModel.uiState.collectAsState()
+                val userDisplayName by homeViewModel.userDisplayName.collectAsState()
 
                 LaunchedEffect(homeUiState) {
                     if (homeUiState is com.example.feature.home.presentation.home.HomeUiState.Idle) {
@@ -73,6 +79,7 @@ fun MainTabsScreen(
 
                 HomeScreen(
                     uiState = homeUiState,
+                    userDisplayName = userDisplayName,
                     onRefresh = { userId -> homeViewModel.refresh(userId) },
                     onBorrowingClick = onBorrowingClick,
                     onSubscriptionClick = onSubscriptionClick,
@@ -80,7 +87,7 @@ fun MainTabsScreen(
                 )
             }
             composable(MainTabRoutes.BOOKS) {
-                val owner = (LocalContext.current as? ComponentActivity)
+                val owner = (context as? ComponentActivity)
                     ?: LocalViewModelStoreOwner.current
                     ?: error("No ViewModelStoreOwner found for Books tab")
                 val booksViewModel: BooksViewModel = koinViewModel(viewModelStoreOwner = owner)
@@ -95,14 +102,58 @@ fun MainTabsScreen(
                 BooksScreen(
                     uiState = booksUiState,
                     onLoadMore = { booksViewModel.loadMore() },
-                    onRetry = { booksViewModel.retry() }
+                    onRetry = { booksViewModel.retry() },
+                    onBookClick = onBookClick
                 )
             }
             composable(MainTabRoutes.LIBRARIES) {
-                PlaceholderScreen(title = "Libraries")
+                val owner = (context as? ComponentActivity)
+                    ?: LocalViewModelStoreOwner.current
+                    ?: error("No ViewModelStoreOwner found for Libraries tab")
+                val librariesViewModel: LibrariesViewModel = koinViewModel(viewModelStoreOwner = owner)
+                val librariesUiState by librariesViewModel.uiState.collectAsState()
+
+                LaunchedEffect(librariesUiState.allLibraries.size, librariesUiState.isLoading, librariesUiState.errorMessage) {
+                    if (librariesUiState.allLibraries.isEmpty() &&
+                        !librariesUiState.isLoading &&
+                        librariesUiState.errorMessage == null
+                    ) {
+                        librariesViewModel.loadLibraries()
+                    }
+                }
+
+                LibrariesScreen(
+                    uiState = librariesUiState,
+                    onCategorySelected = { librariesViewModel.selectCategory(it) },
+                    onRetry = { librariesViewModel.retry() }
+                )
             }
             composable(MainTabRoutes.SETTINGS) {
-                PlaceholderScreen(title = "Settings")
+                val owner = (context as? ComponentActivity)
+                    ?: LocalViewModelStoreOwner.current
+                    ?: error("No ViewModelStoreOwner found for Settings tab")
+                val settingsViewModel: SettingsViewModel = koinViewModel(viewModelStoreOwner = owner)
+                val settingsUiState by settingsViewModel.uiState.collectAsState()
+
+                LaunchedEffect(settingsUiState.shouldExitToSignIn) {
+                    if (settingsUiState.shouldExitToSignIn) {
+                        settingsViewModel.consumeExitNavigation()
+                        onSignOutClick()
+                    }
+                }
+
+                SettingsScreen(
+                    uiState = settingsUiState,
+                    appVersion = appVersion,
+                    onPushNotificationsChanged = { settingsViewModel.onPushNotificationsChanged(it) },
+                    onDueDateRemindersChanged = { settingsViewModel.onDueDateRemindersChanged(it) },
+                    onChangePassword = { password, confirmPassword ->
+                        settingsViewModel.changePassword(password, confirmPassword)
+                    },
+                    onSignOutClick = { settingsViewModel.signOut() },
+                    onDeleteAccountClick = { settingsViewModel.deleteAccount() },
+                    onConsumeFeedback = { settingsViewModel.consumeFeedback() }
+                )
             }
         }
 
@@ -125,17 +176,10 @@ fun MainTabsScreen(
 }
 
 @Composable
-private fun PlaceholderScreen(title: String) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(colorResource(id = R.color.background)),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text = "$title (Coming soon)",
-            color = colorResource(id = R.color.secondary),
-            fontSize = 14.sp
-        )
-    }
+private fun rememberAppVersion(): String {
+    val context = LocalContext.current
+    return runCatching {
+        @Suppress("DEPRECATION")
+        context.packageManager.getPackageInfo(context.packageName, 0).versionName.orEmpty()
+    }.getOrDefault("1.0")
 }

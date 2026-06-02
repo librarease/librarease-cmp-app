@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.feature.home.domain.model.Borrowing
 import com.example.feature.home.domain.model.HomeResult
 import com.example.core.model.book.LibraryInfo
+import com.example.feature.auth.domain.usecase.GetCurrentUserUseCase
 import com.example.feature.home.domain.model.Subscription
 import com.example.feature.home.domain.usecase.GetBorrowingsUseCase
 import com.example.feature.home.domain.usecase.GetCachedBorrowingsUseCase
@@ -27,13 +28,20 @@ class HomeViewModel(
     private val getCachedBookDetailUseCase: GetCachedBookDetailUseCase,
     private val getLibraryDetailUseCase: GetLibraryDetailUseCase,
     private val getCachedLibraryDetailUseCase: GetCachedLibraryDetailUseCase,
-    private val getSubscriptionsUseCase: GetSubscriptionsUseCase
+    private val getSubscriptionsUseCase: GetSubscriptionsUseCase,
+    private val getCurrentUserUseCase: GetCurrentUserUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<HomeUiState>(HomeUiState.Idle)
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
+    private val _userDisplayName = MutableStateFlow("Reader")
+    val userDisplayName: StateFlow<String> = _userDisplayName.asStateFlow()
     private val bookPrefetchInFlight = mutableSetOf<String>()
     private val libraryPrefetchInFlight = mutableSetOf<String>()
+
+    init {
+        loadCurrentUser()
+    }
 
     fun loadHome(userId: String? = null) {
         viewModelScope.launch {
@@ -231,6 +239,17 @@ class HomeViewModel(
                 )
             } else {
                 subscription
+            }
+        }
+    }
+
+    private fun loadCurrentUser() {
+        viewModelScope.launch {
+            val user = getCurrentUserUseCase()
+            _userDisplayName.value = when {
+                user?.name?.isNotBlank() == true -> user.name
+                !user?.email.isNullOrBlank() -> user.email.substringBefore("@")
+                else -> "Reader"
             }
         }
     }

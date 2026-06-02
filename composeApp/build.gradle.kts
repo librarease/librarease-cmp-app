@@ -28,6 +28,8 @@ kotlin {
             implementation(project(":feature:auth"))
             implementation(project(":feature:home"))
             implementation(project(":feature:books"))
+            implementation(project(":feature:libraries"))
+            implementation(project(":feature:settings"))
             implementation(libs.androidx.navigation.compose)
             
             // Koin for DI

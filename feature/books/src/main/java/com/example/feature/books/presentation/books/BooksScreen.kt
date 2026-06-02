@@ -68,6 +68,7 @@ fun BooksScreen(
     uiState: BooksUiState,
     onLoadMore: () -> Unit,
     onRetry: () -> Unit,
+    onBookClick: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     var query by rememberSaveable { mutableStateOf("") }
@@ -124,7 +125,10 @@ fun BooksScreen(
                     modifier = Modifier.fillMaxSize()
                 ) {
                     items(uiState.books, key = { it.id }) { book ->
-                        BookRow(book = book)
+                        BookRow(
+                            book = book,
+                            onBookClick = onBookClick
+                        )
                     }
 
                     if (uiState.isAppending) {
@@ -228,7 +232,10 @@ private fun ErrorState(
 }
 
 @Composable
-private fun BookRow(book: BookSummary) {
+private fun BookRow(
+    book: BookSummary,
+    onBookClick: (String) -> Unit
+) {
     val cardGradient = Brush.horizontalGradient(
         colors = listOf(
             colorResource(id = R.color.surface_light),
@@ -243,6 +250,7 @@ private fun BookRow(book: BookSummary) {
             .fillMaxWidth()
             .clip(RoundedCornerShape(24.dp))
             .background(cardGradient)
+            .clickable { onBookClick(book.id) }
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -298,6 +306,15 @@ private fun BookRow(book: BookSummary) {
                     modifier = Modifier.size(14.dp)
                 )
             }
+        }
+    }
+}
+
+@Composable
+fun RatingScreen(modifier: Modifier = Modifier) {
+    Box(modifier = Modifier.fillMaxSize()) {
+        LazyColumn() {
+            this@Box
         }
     }
 }

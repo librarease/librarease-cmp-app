@@ -3,6 +3,8 @@ package com.example.feature.auth.di
 import com.example.feature.auth.data.remote.AuthApiService
 import com.example.feature.auth.data.repository.AuthRepositoryImpl
 import com.example.feature.auth.domain.repository.AuthRepository
+import com.example.feature.auth.domain.usecase.ChangePasswordUseCase
+import com.example.feature.auth.domain.usecase.DeleteAccountUseCase
 import com.example.feature.auth.domain.usecase.GetCurrentUserUseCase
 import com.example.feature.auth.domain.usecase.IsUserLoggedInUseCase
 import com.example.feature.auth.domain.usecase.SignInUseCase
@@ -16,8 +18,6 @@ import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.dsl.module
 
 val authModule = module {
-
-    //The di is used with koin as it is more friendly with kmp
     
     single { AuthApiService(get()) }
 
@@ -34,6 +34,8 @@ val authModule = module {
     factory { SignUpUseCase(get()) }
     factory { SignInUseCase(get()) }
     factory { SignOutUseCase(get()) }
+    factory { ChangePasswordUseCase(get()) }
+    factory { DeleteAccountUseCase(get()) }
     factory { GetCurrentUserUseCase(get()) }
     factory { IsUserLoggedInUseCase(get()) }
     

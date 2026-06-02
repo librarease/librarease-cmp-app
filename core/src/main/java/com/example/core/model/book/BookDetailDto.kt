@@ -34,9 +34,6 @@ data class BookDetailDto(
     @SerialName("library_id")
     @JsonNames("libraryId")
     val libraryId: String? = null,
-    @SerialName("available")
-    @JsonNames("is_available", "isAvailable", "availability")
-    val available: Boolean? = null,
     val description: String? = null,
     @SerialName("created_at")
     @JsonNames("createdAt")
@@ -69,5 +66,32 @@ data class BookStatsDto(
     @SerialName("review_count")
     @JsonNames("reviewCount")
     val reviewCount: Int? = null,
-    val rating: Double? = null
+    val rating: Double? = null,
+    val borrowing: BookBorrowingDto? = null
+)
+
+@Serializable
+data class BookBorrowingDto(
+    val id: String? = null,
+    @SerialName("book_id")
+    @JsonNames("bookId")
+    val bookId: String? = null,
+    @SerialName("subscription_id")
+    @JsonNames("subscriptionId")
+    val subscriptionId: String? = null,
+    @SerialName("staff_id")
+    @JsonNames("staffId")
+    val staffId: String? = null,
+    @SerialName("borrowed_at")
+    @JsonNames("borrowedAt")
+    val borrowedAt: String? = null,
+    @SerialName("due_at")
+    @JsonNames("dueAt")
+    val dueAt: String? = null,
+    @SerialName("created_at")
+    @JsonNames("createdAt")
+    val createdAt: String? = null,
+    @SerialName("updated_at")
+    @JsonNames("updatedAt")
+    val updatedAt: String? = null
 )

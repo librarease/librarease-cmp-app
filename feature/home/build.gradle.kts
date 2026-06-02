@@ -48,6 +48,7 @@ dependencies {
     implementation(libs.material)
 
     implementation(project(":core"))
+    implementation(project(":feature:auth"))
 
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.ui)

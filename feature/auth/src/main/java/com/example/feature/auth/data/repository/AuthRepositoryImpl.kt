@@ -17,7 +17,9 @@ import com.google.firebase.FirebaseTooManyRequestsException
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
 import com.google.firebase.auth.FirebaseAuthInvalidUserException
+import com.google.firebase.auth.FirebaseAuthRecentLoginRequiredException
 import com.google.firebase.auth.FirebaseAuthUserCollisionException
+import com.google.firebase.auth.FirebaseAuthWeakPasswordException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -101,6 +103,38 @@ class AuthRepositoryImpl(
         }
     }
 
+    override suspend fun changePassword(newPassword: String): AuthResult<Unit> {
+        return try {
+            val user = firebaseAuth.currentUser
+                ?: return AuthResult.Error("Please sign in again to continue", AuthErrorCode.USER_NOT_FOUND)
+
+            user.updatePassword(newPassword).await()
+            AuthResult.Success(Unit)
+        } catch (e: Exception) {
+            handleAccountActionException(
+                exception = e,
+                recentLoginMessage = "For security, please sign in again before changing your password."
+            )
+        }
+    }
+
+    override suspend fun deleteAccount(): AuthResult<Unit> {
+        return try {
+            val user = firebaseAuth.currentUser
+                ?: return AuthResult.Error("Please sign in again to continue", AuthErrorCode.USER_NOT_FOUND)
+
+            user.delete().await()
+            clearUser()
+            firebaseAuth.signOut()
+            AuthResult.Success(Unit)
+        } catch (e: Exception) {
+            handleAccountActionException(
+                exception = e,
+                recentLoginMessage = "For security, please sign in again before deleting your account."
+            )
+        }
+    }
+
     override suspend fun getCurrentUser(): User? {
         return try {
             val userJson = context.authPrefsDataStore.data.first()[USER_KEY]
@@ -173,6 +207,24 @@ class AuthRepositoryImpl(
                 AuthResult.Error("Network error. Please check your connection", AuthErrorCode.NETWORK_ERROR)
             is FirebaseAuthUserCollisionException ->
                 AuthResult.Error("Email already exists", AuthErrorCode.EMAIL_ALREADY_EXISTS)
+            else ->
+                AuthResult.Error(exception.message ?: "Unknown error occurred", AuthErrorCode.UNKNOWN_ERROR)
+        }
+    }
+
+    private fun handleAccountActionException(
+        exception: Exception,
+        recentLoginMessage: String
+    ): AuthResult.Error {
+        return when (exception) {
+            is FirebaseAuthRecentLoginRequiredException ->
+                AuthResult.Error(recentLoginMessage, AuthErrorCode.UNKNOWN_ERROR)
+            is FirebaseAuthWeakPasswordException ->
+                AuthResult.Error("Password must be at least 8 characters", AuthErrorCode.WEAK_PASSWORD)
+            is FirebaseAuthInvalidUserException ->
+                AuthResult.Error("Please sign in again to continue", AuthErrorCode.USER_NOT_FOUND)
+            is FirebaseNetworkException ->
+                AuthResult.Error("Network error. Please check your connection", AuthErrorCode.NETWORK_ERROR)
             else ->
                 AuthResult.Error(exception.message ?: "Unknown error occurred", AuthErrorCode.UNKNOWN_ERROR)
         }

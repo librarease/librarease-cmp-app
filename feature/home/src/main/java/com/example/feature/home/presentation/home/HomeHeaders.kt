@@ -13,6 +13,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material.icons.outlined.NotificationsNone
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -26,12 +27,15 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.core.R
 
 @Composable
-internal fun GreetingHeader() {
+internal fun GreetingHeader(
+    userDisplayName: String
+) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
@@ -44,24 +48,26 @@ internal fun GreetingHeader() {
                 color = colorResource(id = R.color.secondary)
             )
             Text(
-                text = "Reader",
+                text = userDisplayName,
                 fontSize = 24.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = colorResource(id = R.color.primary)
+                color = colorResource(id = R.color.primary),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
         }
 
-        Box(
+        IconButton(
+            onClick = {},
             modifier = Modifier
                 .size(40.dp)
                 .clip(CircleShape)
-                .background(colorResource(id = R.color.surface_light)),
-            contentAlignment = Alignment.Center
+                .background(colorResource(id = R.color.surface_light))
         ) {
-            Text(
-                text = "R",
-                fontWeight = FontWeight.Bold,
-                color = colorResource(id = R.color.primary)
+            Icon(
+                imageVector = Icons.Outlined.NotificationsNone,
+                contentDescription = "Notifications",
+                tint = colorResource(id = R.color.primary)
             )
         }
     }

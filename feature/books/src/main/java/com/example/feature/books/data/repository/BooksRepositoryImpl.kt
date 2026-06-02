@@ -5,10 +5,12 @@ import android.util.Log
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.example.core.model.book.BookDetail
+import com.example.core.model.book.BookDetailDto
 import com.example.core.model.book.BookDto
 import com.example.core.model.book.BookSummary
 import com.example.core.storage.authPrefsDataStore
 import com.example.feature.books.data.model.toDomain
+import com.example.feature.books.data.model.toDto
 import com.example.feature.books.data.remote.BooksApiService
 import com.example.feature.books.domain.model.BooksResult
 import com.example.feature.books.domain.repository.BooksRepository
@@ -31,6 +33,14 @@ class BooksRepositoryImpl(
         val preferences = context.authPrefsDataStore.data.first()
         val cachedPayload = preferences[LATEST_BOOKS_CACHE_KEY] ?: return emptyList()
         return decodeCachedBooks(cachedPayload)
+    }
+
+    override suspend fun getCachedBookDetail(bookId: String): BookDetail? {
+        if (bookId.isBlank()) return null
+        val preferences = context.authPrefsDataStore.data.first()
+        val cacheKey = bookDetailCacheKey(bookId)
+        val cachedPayload = preferences[cacheKey] ?: return null
+        return decodeCachedBookDetail(cachedPayload, bookId)
     }
 
     override suspend fun getBooks(limit: Int, skip: Int): BooksResult<List<BookSummary>> {
@@ -64,6 +74,7 @@ class BooksRepositoryImpl(
 
         return try {
             val book = booksApiService.getBookDetail(bookId).toDomain()
+            cacheBookDetail(bookId, book)
             BooksResult.Success(book)
         } catch (e: Exception) {
             Log.e(TAG, "Failed to load book detail", e)
@@ -90,6 +101,28 @@ class BooksRepositoryImpl(
         } catch (e: Exception) {
             Log.w(TAG, "Failed to decode cached books", e)
             emptyList()
+        }
+    }
+
+    private suspend fun cacheBookDetail(bookId: String, bookDetail: BookDetail) {
+        val cacheKey = bookDetailCacheKey(bookId)
+        val encoded = json.encodeToString(bookDetail.toDto())
+        context.authPrefsDataStore.edit { preferences ->
+            preferences[cacheKey] = encoded
+        }
+    }
+
+    private fun bookDetailCacheKey(bookId: String) = stringPreferencesKey("book_detail_cache_$bookId")
+
+    private fun decodeCachedBookDetail(
+        cachedPayload: String,
+        bookIdTag: String
+    ): BookDetail? {
+        return try {
+            json.decodeFromString<BookDetailDto>(cachedPayload).toDomain()
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to decode cached book detail for bookId=$bookIdTag", e)
+            null
         }
     }
 

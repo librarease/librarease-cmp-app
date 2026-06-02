@@ -22,7 +22,6 @@ data class BookDetail(
     val coverUrl: String?,
     val colors: BookPalette?,
     val libraryId: String?,
-    val available: Boolean?,
     val description: String?,
     val stats: BookStats?,
     val library: LibraryInfo?
@@ -31,7 +30,14 @@ data class BookDetail(
 data class BookStats(
     val borrowCount: Int,
     val reviewCount: Int,
-    val rating: Double
+    val rating: Double,
+    val borrowing: BookBorrowing? = null
+)
+
+data class BookBorrowing(
+    val id: String,
+    val borrowedAt: String?,
+    val dueAt: String?
 )
 
 data class LibraryInfo(

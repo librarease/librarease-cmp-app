@@ -1,5 +1,8 @@
 package com.example.feature.home.di
 
+import com.example.core.subscriptions.SubscribedLibrariesProvider
+import com.example.feature.auth.domain.usecase.GetCurrentUserUseCase
+import com.example.feature.home.data.provider.HomeSubscribedLibrariesProvider
 import com.example.feature.home.data.remote.HomeApiService
 import com.example.feature.home.data.repository.HomeRepositoryImpl
 import com.example.feature.home.domain.repository.HomeRepository
@@ -39,6 +42,7 @@ val homeModule = module {
             json = get()
         )
     }
+    single<SubscribedLibrariesProvider> { HomeSubscribedLibrariesProvider(get()) }
 
     factory { GetCachedBorrowingsUseCase(get()) }
     factory { GetCachedBookDetailUseCase(get()) }
@@ -51,7 +55,7 @@ val homeModule = module {
     factory { GetSubscriptionsUseCase(get()) }
     factory { WarmUpHomeUseCase(get(), get()) }
 
-    viewModel { HomeViewModel(get(), get(), get(), get(), get(), get(), get()) }
+    viewModel { HomeViewModel(get(), get(), get(), get(), get(), get(), get(), get<GetCurrentUserUseCase>()) }
     viewModel { BorrowingDetailViewModel(get(), get(), get()) }
     viewModel { SubscriptionDetailViewModel(get(), get(), get()) }
 }
